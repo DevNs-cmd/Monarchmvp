@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  FOUNDER
+  INVESTOR
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING
+}
+
+enum InterestStatus {
+  PENDING
+  MUTUAL
+  DECLINED
+}
+
+model User {
+  id              String           @id @default(cuid())
+  name            String?
+  email           String           @unique
+  role            Role             @default(FOUNDER)
+  verified        Boolean          @default(false)
+  status          UserStatus       @default(ACTIVE)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  founderProfile  FounderProfile?
+  investorProfile InvestorProfile?
+  auditLogs       AuditLog[]
+  payments        Payment[]
+  messages        Message[]
+  inviteId        String?          @unique
+  inviteUsed      Invite?          @relation("InviteUsage", fields: [inviteId], references: [id])
+}
+
+model Invite {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  role      Role
+  used      Boolean  @default(false)
+  usedBy    User?    @relation("InviteUsage")
+  createdAt DateTime @default(now())
+}
+
+model FounderProfile {
+  id           String   @id @default(cuid())
+  user         User     @relation(fields: [userId], references: [id])
+  userId       String   @unique
+  companyName  String
+  stage        String
+  capitalAsk   Float
+  valuation    Float?
+  deckUrl      String?
+  monarchIndex Int      @default(0)
+  status       String   @default("UNDER_REVIEW")
+  startup      Startup?
+}
+
+model InvestorProfile {
+  id              String   @id @default(cuid())
+  user            User     @relation(fields: [userId], references: [id])
+  userId          String   @unique
+  investmentRange String
+  sectors         String[]
+  region          String
+  verified        Boolean  @default(false)
+  interests       Interest[]
+}
+
+model Startup {
+  id           String     @id @default(cuid())
+  founder      FounderProfile @relation(fields: [founderId], references: [id])
+  founderId    String     @unique
+  industry     String
+  stage        String
+  capitalAsk   Float
+  monarchIndex Int        @default(0)
+  interests    Interest[]
+  dealRooms    DealRoom[]
+}
+
+model Interest {
+  id         String   @id @default(cuid())
+  investor   InvestorProfile @relation(fields: [investorId], references: [id])
+  investorId String
+  startup    Startup  @relation(fields: [startupId], references: [id])
+  startupId  String
+  status     InterestStatus @default(PENDING)
+  createdAt  DateTime @default(now())
+  @@unique([investorId, startupId])
+}
+
+model DealRoom {
+  id         String    @id @default(cuid())
+  startup    Startup   @relation(fields: [startupId], references: [id])
+  startupId  String
+  investorId String
+  unlocked   Boolean   @default(false)
+  messages   Message[]
+  createdAt  DateTime  @default(now())
+}
+
+model Message {
+  id               String   @id @default(cuid())
+  dealRoom         DealRoom @relation(fields: [dealRoomId], references: [id])
+  dealRoomId       String
+  sender           User     @relation(fields: [senderId], references: [id])
+  senderId         String
+  encryptedContent String
+  createdAt        DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  action    String
+  entity    String
+  timestamp DateTime @default(now())
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  type      String
+  status    String
+  createdAt DateTime @default(now())
+}
