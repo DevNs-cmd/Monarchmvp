@@ -1,10 +1,14 @@
 import crypto from "crypto";
 
 const ALGORITHM = "aes-256-cbc";
+// In production, use a secure env variable for the key
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || "01234567890123456789012345678901"; // 32 bytes
 const IV_LENGTH = 16;
 
-export function encrypt(text: string) {
+/**
+ * Encrypts content for secure Deal Room storage.
+ */
+export function encrypt(text: string): string {
     const iv = crypto.randomBytes(IV_LENGTH);
     const cipher = crypto.createCipheriv(ALGORITHM, Buffer.from(ENCRYPTION_KEY), iv);
     let encrypted = cipher.update(text);
@@ -12,7 +16,10 @@ export function encrypt(text: string) {
     return iv.toString("hex") + ":" + encrypted.toString("hex");
 }
 
-export function decrypt(text: string) {
+/**
+ * Decrypts content for Board verification.
+ */
+export function decrypt(text: string): string {
     const textParts = text.split(":");
     const iv = Buffer.from(textParts.shift()!, "hex");
     const encryptedText = Buffer.from(textParts.join(":"), "hex");

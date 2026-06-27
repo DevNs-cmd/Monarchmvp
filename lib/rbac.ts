@@ -1,36 +1,28 @@
-import { Role } from "@prisma/client";
+export type Role = "FOUNDER" | "INVESTOR" | "ADMIN";
 
 export const PERMISSIONS = {
     ADMIN: [
-        "admin:console",
+        "board:override",
         "user:approve",
         "user:suspend",
-        "index:override",
         "audit:view",
+        "system:settings"
     ],
     INVESTOR: [
         "boardroom:view",
+        "markets:view",
         "dealroom:access",
-        "startup:dossier",
-        "market:intelligence",
+        "dossier:request"
     ],
     FOUNDER: [
-        "founder:dashboard",
-        "startup:update",
-        "deck:upload",
+        "dashboard:view",
+        "onboarding:complete",
         "dealroom:access",
+        "stats:view"
     ],
 };
 
-export function hasPermission(role: Role, permission: string) {
-    const rolePermissions = PERMISSIONS[role] || [];
-    return rolePermissions.includes(permission);
-}
-
-export function canAccessRoute(role: Role, pathname: string) {
-    if (role === "ADMIN") return true;
-    if (pathname.startsWith("/founder") && role !== "FOUNDER") return false;
-    if (pathname.startsWith("/investor") && role !== "INVESTOR") return false;
-    if (pathname.startsWith("/boardroom") && role !== "INVESTOR") return false;
-    return true;
+export function hasPermission(role: Role, permission: string): boolean {
+    const allowed = PERMISSIONS[role] || [];
+    return allowed.includes(permission);
 }

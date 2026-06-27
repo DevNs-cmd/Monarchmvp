@@ -17,6 +17,7 @@ enum UserStatus {
   ACTIVE
   SUSPENDED
   PENDING
+  BLACKLISTED
 }
 
 enum InterestStatus {
@@ -32,15 +33,24 @@ model User {
   role            Role             @default(FOUNDER)
   verified        Boolean          @default(false)
   status          UserStatus       @default(ACTIVE)
+  tokenVersion    Int              @default(0)
+  suspendedAt     DateTime?
+  blacklistedAt   DateTime?
+  blacklistReason String?
+  linkedinUrl     String?
+  inviteCodeUsed  String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   founderProfile  FounderProfile?
   investorProfile InvestorProfile?
   auditLogs       AuditLog[]
+  activityLogs    ActivityLog[]
   payments        Payment[]
   messages        Message[]
+  watchlists      Watchlist[]
   inviteId        String?          @unique
   inviteUsed      Invite?          @relation("InviteUsage", fields: [inviteId], references: [id])
+  OtpToken        OtpToken?
 }
 
 model Invite {
@@ -53,61 +63,109 @@ model Invite {
 }
 
 model FounderProfile {
-  id           String   @id @default(cuid())
-  user         User     @relation(fields: [userId], references: [id])
-  userId       String   @unique
-  companyName  String
-  stage        String
-  capitalAsk   Float
-  valuation    Float?
-  deckUrl      String?
-  monarchIndex Int      @default(0)
-  status       String   @default("UNDER_REVIEW")
-  startup      Startup?
+  id                           String                @id @default(cuid())
+  user                         User                  @relation(fields: [userId], references: [id])
+  userId                       String                @unique
+  companyName                  String
+  stage                        String
+  capitalAsk                   Float
+  valuation                    Float?
+  deckUrl                      String?
+  deckVersion                  Int                   @default(1)
+  monarchIndex                 Float?
+  certifiedStatus              CertifiedStatus       @default(PENDING)
+  certifiedUntil               DateTime?
+  certificationId              String?               @unique
+  successFeeAgreedAt           DateTime?
+  advisoryEquityAcknowledgedAt DateTime?
+  status                       String                @default("UNDER_REVIEW")
+  startup                      Startup?
+  indexHistory                 MonarchIndexHistory[]
+  certifications               CertificationRecord[]
 }
 
 model InvestorProfile {
-  id              String   @id @default(cuid())
-  user            User     @relation(fields: [userId], references: [id])
-  userId          String   @unique
-  investmentRange String
-  sectors         String[]
-  region          String
-  verified        Boolean  @default(false)
-  interests       Interest[]
+  id                   String                @id @default(cuid())
+  user                 User                  @relation(fields: [userId], references: [id])
+  userId               String                @unique
+  investmentRange      String
+  sectors              String[]
+  stages               String[]
+  region               String
+  capitalMin           Float                 @default(0)
+  capitalMax           Float                 @default(0)
+  capitalRangeMin      Float?
+  capitalRangeMax      Float?
+  sectorPrefs          String[]
+  stagePrefs           String[]
+  ndaSigned            Boolean               @default(false)
+  ndaSignedAt          DateTime?
+  verified             Boolean               @default(false)
+  interests            Interest[]
+  introductionRequests IntroductionRequest[]
 }
 
 model Startup {
-  id           String     @id @default(cuid())
-  founder      FounderProfile @relation(fields: [founderId], references: [id])
-  founderId    String     @unique
-  industry     String
-  stage        String
-  capitalAsk   Float
-  monarchIndex Int        @default(0)
-  interests    Interest[]
-  dealRooms    DealRoom[]
+  id                   String                @id @default(cuid())
+  founder              FounderProfile        @relation(fields: [founderId], references: [id])
+  founderId            String                @unique
+  industry             String
+  stage                String
+  capitalAsk           Float
+  region               String                @default("Global")
+  monarchIndex         Float?
+  interests            Interest[]
+  introductionRequests IntroductionRequest[]
+  dealRooms            DealRoom[]
 }
 
 model Interest {
-  id         String   @id @default(cuid())
+  id                String          @id @default(cuid())
+  investor          InvestorProfile @relation(fields: [investorId], references: [id])
+  investorId        String
+  startup           Startup         @relation(fields: [startupId], references: [id])
+  startupId         String
+  investorInterest  Boolean         @default(false)
+  founderInterest   Boolean         @default(false)
+  status            InterestStatus  @default(PENDING)
+  introRequestedAt  DateTime?
+  introStatus       String?
+  mutualConfirmedAt DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@unique([investorId, startupId])
+}
+
+model IntroductionRequest {
+  id         String          @id @default(cuid())
   investor   InvestorProfile @relation(fields: [investorId], references: [id])
   investorId String
-  startup    Startup  @relation(fields: [startupId], references: [id])
+  startup    Startup         @relation(fields: [startupId], references: [id])
   startupId  String
-  status     InterestStatus @default(PENDING)
-  createdAt  DateTime @default(now())
+  status     String          @default("PENDING")
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
   @@unique([investorId, startupId])
 }
 
 model DealRoom {
-  id         String    @id @default(cuid())
-  startup    Startup   @relation(fields: [startupId], references: [id])
-  startupId  String
-  investorId String
-  unlocked   Boolean   @default(false)
-  messages   Message[]
-  createdAt  DateTime  @default(now())
+  id                  String         @id @default(cuid())
+  startup             Startup        @relation(fields: [startupId], references: [id])
+  startupId           String
+  investorId          String
+  unlocked            Boolean        @default(false)
+  stage               DealStage      @default(INTRODUCTION)
+  ndaConfirmed        Boolean        @default(false)
+  successFeeTriggered Boolean        @default(false)
+  lastActivityAt      DateTime?
+  messages            Message[]
+  documents           DealDocument[]
+  meetings            Meeting[]
+  createdAt           DateTime       @default(now())
+
+  @@unique([startupId, investorId])
 }
 
 model Message {
@@ -130,10 +188,154 @@ model AuditLog {
 }
 
 model Payment {
+  id                    String      @id @default(cuid())
+  user                  User        @relation(fields: [userId], references: [id])
+  userId                String
+  amount                Float
+  currency              String      @default("USD")
+  type                  PaymentType
+  stripePaymentIntentId String?
+  status                String      @default("pending")
+  receiptUrl            String?
+  createdAt             DateTime    @default(now())
+}
+
+model AccessRequest {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  linkedin  String
+  role      Role
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+}
+
+model MigMarket {
+  id                   String   @id @default(cuid())
+  ticker               String   @unique
+  migScore             Int
+  riskIndex            Int
+  recommendation       String
+  allocationSuggestion String
+  rationale            String[]
+  createdAt            DateTime @default(now())
+}
+
+model MIGSignal {
+  id             String    @id @default(cuid())
+  ticker         String
+  companyName    String
+  sector         String
+  migScore       Float
+  riskIndex      Float
+  recommendation String
+  timeHorizon    String
+  rationale      String[]
+  suggestedAlloc Float
+  approvedAt     DateTime?
+  approvedBy     String?
+  publishedAt    DateTime?
+  isPublished    Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+}
+
+model Watchlist {
   id        String   @id @default(cuid())
   user      User     @relation(fields: [userId], references: [id])
   userId    String
-  type      String
-  status    String
+  ticker    String
   createdAt DateTime @default(now())
+
+  @@unique([userId, ticker])
+}
+
+model MonarchIndexHistory {
+  id               String         @id @default(cuid())
+  founderProfile   FounderProfile @relation(fields: [founderProfileId], references: [id])
+  founderProfileId String
+  score            Float
+  breakdown        Json
+  setBy            String
+  createdAt        DateTime       @default(now())
+}
+
+model OtpToken {
+  id        String    @id @default(cuid())
+  user      User      @relation(fields: [userId], references: [id])
+  userId    String    @unique
+  hashedOtp String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  action    String
+  metadata  Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+}
+
+model CertificationRecord {
+  id               String         @id @default(cuid())
+  founderProfile   FounderProfile @relation(fields: [founderProfileId], references: [id])
+  founderProfileId String
+  stage            Int
+  status           String
+  reviewedBy       String?
+  notes            String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+model DealDocument {
+  id         String   @id @default(cuid())
+  dealRoom   DealRoom @relation(fields: [dealRoomId], references: [id])
+  dealRoomId String
+  uploadedBy String
+  filename   String
+  s3Key      String
+  size       Int
+  createdAt  DateTime @default(now())
+}
+
+model Meeting {
+  id            String   @id @default(cuid())
+  dealRoom      DealRoom @relation(fields: [dealRoomId], references: [id])
+  dealRoomId    String
+  scheduledAt   DateTime
+  format        String
+  monarchHosted Boolean  @default(true)
+  joinUrl       String?
+  createdAt     DateTime @default(now())
+}
+
+enum PaymentType {
+  SCREENING_FEE
+  BOARDROOM_ACCESS
+  ALGO_ACCESS
+  CUSTOM_REPORT
+}
+
+enum CertifiedStatus {
+  PENDING
+  STAGE_1
+  STAGE_2
+  STAGE_3
+  STAGE_4
+  CERTIFIED
+  REVOKED
+}
+
+enum DealStage {
+  INTRODUCTION
+  NDA_SIGNED
+  DOCUMENTS_EXCHANGED
+  TERM_SHEET
+  FUNDED
 }

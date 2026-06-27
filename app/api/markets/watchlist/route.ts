@@ -1,0 +1,49 @@
+import { NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+
+export async function GET() {
+    try {
+        const session = await getSession();
+        if (!session || session.role !== "INVESTOR") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+        const items = await prisma.watchlist.findMany({
+            where: { userId: session.userId },
+            orderBy: { createdAt: "desc" },
+        });
+
+        return NextResponse.json({ items });
+    } catch (error) {
+        console.error("Watchlist fetch error:", error);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    }
+}
+
+export async function POST(request: Request) {
+    try {
+        const session = await getSession();
+        if (!session || session.role !== "INVESTOR") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+        const { ticker } = await request.json();
+        if (!ticker) return NextResponse.json({ error: "Ticker required" }, { status: 400 });
+
+        const item = await prisma.watchlist.upsert({
+            where: {
+                userId_ticker: {
+                    userId: session.userId,
+                    ticker,
+                },
+            },
+            create: {
+                userId: session.userId,
+                ticker,
+            },
+            update: {},
+        });
+
+        return NextResponse.json({ success: true, item });
+    } catch (error) {
+        console.error("Watchlist add error:", error);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    }
+}

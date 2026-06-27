@@ -4,72 +4,82 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
     LayoutDashboard,
-    Users,
     MessageSquare,
     ShieldCheck,
-    Settings,
+    LineChart,
     LogOut,
-    Briefcase
+    Users,
 } from "lucide-react";
 
-const founderLinks = [
-    { name: "Overview", href: "/founder/dashboard", icon: LayoutDashboard },
-    { name: "ApplicationStatus", href: "#", icon: ShieldCheck },
-    { name: "Documents", href: "#", icon: Briefcase },
-    { name: "Messages", href: "#", icon: MessageSquare },
-];
+interface SidebarProps {
+    role: "FOUNDER" | "INVESTOR" | "ADMIN";
+}
 
-const investorLinks = [
-    { name: "Markets", href: "/investor/dashboard", icon: LayoutDashboard },
-    { name: "Boardroom", href: "/boardroom", icon: Users },
-    { name: "Portfolio", href: "#", icon: Briefcase },
-    { name: "Intelligence", href: "#", icon: ShieldCheck },
-];
-
-export default function Sidebar({ role }: { role: "FOUNDER" | "INVESTOR" | "ADMIN" }) {
+export default function Sidebar({ role }: SidebarProps) {
     const pathname = usePathname();
-    const links = role === "FOUNDER" ? founderLinks : investorLinks;
+
+    const links = {
+        FOUNDER: [
+            { name: "Executive Suite", icon: LayoutDashboard, href: "/founder/dashboard" },
+            { name: "Deal Room", icon: MessageSquare, href: "/dealroom" },
+        ],
+        INVESTOR: [
+            { name: "Alpha Pulse", icon: LayoutDashboard, href: "/investor/dashboard" },
+            { name: "Boardroom", icon: Users, href: "/boardroom" },
+            { name: "MIG Markets", icon: LineChart, href: "/investor/markets" },
+            { name: "Portfolio", icon: LineChart, href: "/investor/portfolio" },
+            { name: "Intelligence", icon: ShieldCheck, href: "/investor/intelligence" },
+            { name: "Profile", icon: Users, href: "/investor/profile" },
+            { name: "Deal Room", icon: MessageSquare, href: "/dealroom" },
+        ],
+        ADMIN: [
+            { name: "Control Center", icon: ShieldCheck, href: "/admin/console" },
+        ],
+    };
+
+    const currentLinks = links[role] || [];
 
     return (
-        <aside className="fixed left-0 top-0 h-screen w-64 bg-black border-r border-white/5 flex flex-col z-50">
+        <aside className="w-72 bg-[#050505] border-r border-white/5 flex flex-col h-screen fixed left-0 top-0 z-50">
             <div className="p-8">
-                <Link href="/" className="flex items-center gap-3 group">
-                    <div className="w-8 h-8 border border-accent rounded-full flex items-center justify-center group-hover:bg-accent transition-all duration-300">
-                        <span className="text-xs font-bold text-accent group-hover:text-black">M</span>
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 border border-gold rounded-full flex items-center justify-center">
+                        <span className="text-gold font-bold text-xs">M</span>
                     </div>
-                    <span className="font-bold tracking-[0.2em] text-sm">MONARCH</span>
-                </Link>
+                    <span className="font-bold tracking-[0.2em] text-sm uppercase">Monarch</span>
+                </div>
             </div>
 
-            <nav className="flex-1 px-4 space-y-2">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-secondary px-4 mb-4">Navigation</p>
-                {links.map((link) => {
+            <nav className="flex-1 px-4 py-8 space-y-2">
+                {currentLinks.map((link) => {
                     const Icon = link.icon;
                     const isActive = pathname === link.href;
                     return (
                         <Link
                             key={link.name}
                             href={link.href}
-                            className={`flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 group ${isActive
-                                    ? "bg-accent text-black"
-                                    : "text-secondary hover:bg-white/5 hover:text-white"
+                            className={`flex items-center gap-4 px-6 py-4 rounded-xl transition-all duration-300 group ${isActive
+                                    ? "bg-gold/10 text-gold"
+                                    : "text-secondary hover:bg-white/[0.02] hover:text-white"
                                 }`}
                         >
-                            <Icon size={20} className={isActive ? "text-black" : "text-secondary group-hover:text-accent"} />
-                            <span className="text-sm font-medium">{link.name}</span>
+                            <Icon size={18} className={isActive ? "text-gold" : "text-secondary group-hover:text-white"} />
+                            <span className="text-xs font-bold uppercase tracking-widest">{link.name}</span>
+                            {isActive && (
+                                <div className="w-1.5 h-1.5 rounded-full bg-gold ml-auto" />
+                            )}
                         </Link>
                     );
                 })}
             </nav>
 
-            <div className="p-4 mt-auto border-t border-white/5 space-y-2">
-                <button className="w-full flex items-center gap-4 px-4 py-3 text-secondary text-sm hover:text-white transition-colors">
-                    <Settings size={20} />
-                    <span>Settings</span>
-                </button>
-                <Link href="/" className="w-full flex items-center gap-4 px-4 py-3 text-red-500/70 text-sm hover:text-red-500 transition-colors">
-                    <LogOut size={20} />
-                    <span>Exit Gate</span>
+            <div className="p-6 mt-auto">
+                <Link
+                    href="/"
+                    className="flex items-center gap-4 px-6 py-4 text-red-500/60 hover:text-red-500 transition-colors uppercase tracking-widest font-bold text-[10px]"
+                >
+                    <LogOut size={16} />
+                    Sign Out Desk
                 </Link>
             </div>
         </aside>

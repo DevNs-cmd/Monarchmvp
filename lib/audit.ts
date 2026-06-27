@@ -1,7 +1,15 @@
 import { prisma } from "./prisma";
 
-export async function logAction(userId: string, action: string, entity: string) {
+/**
+ * Global Audit Logging System
+ */
+export async function logAction(
+    userId: string,
+    action: string,
+    entity: string
+) {
     try {
+        // Note: Ensuring prisma is initialized and user exists
         await prisma.auditLog.create({
             data: {
                 userId,
@@ -9,26 +17,8 @@ export async function logAction(userId: string, action: string, entity: string) 
                 entity,
             },
         });
-        console.log(`[Audit] ${userId} performed ${action} on ${entity}`);
+        console.log(`[AUDIT] User ${userId} performed ${action} on ${entity}`);
     } catch (error) {
-        console.error("[Audit Error]", error);
+        console.error("[AUDIT_ERROR] Failed to shadow-log action:", error);
     }
-}
-
-export async function getAuditLogs(limit = 50) {
-    return await prisma.auditLog.findMany({
-        take: limit,
-        orderBy: {
-            timestamp: "desc",
-        },
-        include: {
-            user: {
-                select: {
-                    name: true,
-                    email: true,
-                    role: true,
-                },
-            },
-        },
-    });
 }

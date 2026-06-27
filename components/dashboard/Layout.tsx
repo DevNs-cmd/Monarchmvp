@@ -1,23 +1,23 @@
 "use client";
 
-import Sidebar from "./Sidebar";
 import { motion } from "framer-motion";
+import Sidebar from "./Sidebar";
 
-export default function DashboardLayout({
-    children,
-    role
-}: {
+interface DashboardLayoutProps {
     children: React.ReactNode;
     role: "FOUNDER" | "INVESTOR" | "ADMIN";
-}) {
+}
+
+export default function DashboardLayout({ children, role }: DashboardLayoutProps) {
     return (
-        <div className="min-h-screen bg-black text-white">
+        <div className="min-h-screen bg-black flex">
             <Sidebar role={role} />
-            <main className="ml-64 p-12">
+
+            <main className="flex-1 ml-72 p-12 overflow-y-auto">
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
+                    transition={{ duration: 0.6 }}
                 >
                     {children}
                 </motion.div>

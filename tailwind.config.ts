@@ -1,29 +1,37 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  content: [
-    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./app/**/*.{js,ts,jsx,tsx,mdx}",
-  ],
+  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        background: "#000000",
-        foreground: "#FFFFFF",
-        accent: {
-          DEFAULT: "#C9A24D",
-          light: "#E5C17D",
-          dark: "#A68239",
-        },
-        secondary: "#9CA3AF",
+        gold: "#C9A24D",
+        "gold-light": "#E2BE7A",
+        "gold-dim": "#8B6E2F",
+        "off-black": "#0A0A0A",
+        "dark-1": "#111111",
+        "dark-2": "#1A1A1A",
+        "dark-3": "#242424",
+        grey: "#888888",
+        "grey-light": "#AAAAAA",
+        "grey-dim": "#444444",
       },
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "Inter", "sans-serif"],
-        mono: ["var(--font-geist-mono)", "monospace"],
+        serif: ["var(--font-cormorant)", "Georgia", "serif"],
+        sans: ["var(--font-dm-sans)", "system-ui", "sans-serif"],
       },
-      borderRadius: {
-        "2xl": "1rem",
+      letterSpacing: {
+        widest2: "0.22em",
+        widest3: "0.18em",
+        widest4: "0.14em",
+      },
+      transitionTimingFunction: {
+        monarch: "cubic-bezier(0.22, 1, 0.36, 1)",
+      },
+      transitionDuration: {
+        800: "800ms",
+        900: "900ms",
+        1200: "1200ms",
       },
     },
   },
