@@ -14,7 +14,7 @@ type Props<T> = {
   emptyLabel?: string;
 };
 
-export default function MonarchTable<T extends Record<string, any>>({
+export default function MonarchTable<T extends object>({
   columns,
   rows,
   emptyLabel = "No records.",
@@ -55,7 +55,7 @@ export default function MonarchTable<T extends Record<string, any>>({
                     key={String(col.key)}
                     className={clsx("px-4 py-4 text-[14px] text-grey-light", col.className)}
                   >
-                    {col.render ? col.render(row) : (row as any)[col.key]}
+                    {col.render ? col.render(row) : (row[col.key as keyof T] as ReactNode)}
                   </td>
                 ))}
               </tr>

@@ -36,9 +36,15 @@ export default function MonarchInput(props: Props) {
         <label className="block text-[11px] uppercase tracking-widest4 text-grey-dim">{label}</label>
       ) : null}
       {as === "textarea" ? (
-        <textarea className={clsx(shared, border, "resize-none", className)} {...(rest as any)} />
+        <textarea
+          className={clsx(shared, border, "resize-none", className)}
+          {...(rest as TextareaHTMLAttributes<HTMLTextAreaElement>)}
+        />
       ) : (
-        <input className={clsx(shared, border, className)} {...(rest as any)} />
+        <input
+          className={clsx(shared, border, className)}
+          {...(rest as InputHTMLAttributes<HTMLInputElement>)}
+        />
       )}
       {hint && !error ? <p className="text-[12px] text-grey-dim">{hint}</p> : null}
       {error ? <p className="text-[12px] text-red-400">{error}</p> : null}

@@ -50,7 +50,7 @@ model User {
   watchlists      Watchlist[]
   inviteId        String?          @unique
   inviteUsed      Invite?          @relation("InviteUsage", fields: [inviteId], references: [id])
-  OtpToken        OtpToken?
+  otpTokens       OtpToken[]
 }
 
 model Invite {
@@ -96,8 +96,8 @@ model InvestorProfile {
   capitalMax           Float                 @default(0)
   capitalRangeMin      Float?
   capitalRangeMax      Float?
-  sectorPrefs          String[]
-  stagePrefs           String[]
+  sectorPrefs          String[]              @default([])
+  stagePrefs           String[]              @default([])
   ndaSigned            Boolean               @default(false)
   ndaSignedAt          DateTime?
   verified             Boolean               @default(false)
@@ -194,6 +194,7 @@ model Payment {
   amount                Float
   currency              String      @default("USD")
   type                  PaymentType
+  stripeSessionId       String?
   stripePaymentIntentId String?
   status                String      @default("pending")
   receiptUrl            String?
@@ -254,21 +255,27 @@ model MonarchIndexHistory {
   founderProfile   FounderProfile @relation(fields: [founderProfileId], references: [id])
   founderProfileId String
   score            Float
-  breakdown        Json
-  setBy            String
+  version          Int            @default(1)
+  breakdown        Json?
+  setBy            String         @default("SYSTEM")
   createdAt        DateTime       @default(now())
 }
 
 model OtpToken {
-  id        String    @id @default(cuid())
-  user      User      @relation(fields: [userId], references: [id])
-  userId    String    @unique
-  hashedOtp String
+  id        String   @id @default(cuid())
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    String?
+  email     String?
+  code      String?
+  hashedOtp String?
   expiresAt DateTime
+  used      Boolean  @default(false)
   usedAt    DateTime?
-  createdAt DateTime  @default(now())
+  createdAt DateTime @default(now())
 
   @@index([userId])
+  @@index([email])
+  @@index([email, code, used])
 }
 
 model ActivityLog {

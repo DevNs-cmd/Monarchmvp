@@ -33,7 +33,7 @@ export default function Sidebar({ role }: SidebarProps) {
             { name: "Deal Room", icon: MessageSquare, href: "/dealroom" },
         ],
         ADMIN: [
-            { name: "Control Center", icon: ShieldCheck, href: "/admin/console" },
+            { name: "Control Center", icon: ShieldCheck, href: "/admin/dashboard" },
         ],
     };
 

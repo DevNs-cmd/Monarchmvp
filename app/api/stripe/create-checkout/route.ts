@@ -1,11 +1,10 @@
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { PaymentType } from "@prisma/client";
 import Stripe from "stripe";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET || "", {
-    apiVersion: "2024-06-20",
-});
 
 export async function POST(request: Request) {
     try {
@@ -18,13 +17,17 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Stripe not configured" }, { status: 500 });
         }
 
+        const stripe = new Stripe(process.env.STRIPE_SECRET);
         const body = await request.json();
         const { type } = body;
+        const paymentType = Object.values(PaymentType).includes(type) ? type : PaymentType.CUSTOM_REPORT;
 
         const payment = await prisma.payment.create({
             data: {
                 userId: session.userId,
-                type: type || "CUSTOM_REPORT",
+                amount: 499,
+                currency: "USD",
+                type: paymentType,
                 status: "PENDING",
             },
         });
@@ -47,8 +50,8 @@ export async function POST(request: Request) {
             metadata: {
                 paymentId: payment.id,
             },
-            success_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/payments?success=1`,
-            cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/payments?canceled=1`,
+            success_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/founder/payments?success=1`,
+            cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/founder/payments?canceled=1`,
         });
 
         await prisma.payment.update({

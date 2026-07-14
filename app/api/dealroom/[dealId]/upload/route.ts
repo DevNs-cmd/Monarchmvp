@@ -1,11 +1,14 @@
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
+import type { JWTPayload } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { scanBuffer } from "@/lib/virus-scan";
 import { uploadToS3, getPresignedUrl } from "@/lib/s3";
 import { logAction } from "@/lib/audit";
 
-async function authorize(session: any, dealId: string) {
+async function authorize(session: JWTPayload, dealId: string) {
     const dealRoom = await prisma.dealRoom.findUnique({
         where: { id: dealId },
     });

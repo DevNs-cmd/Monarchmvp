@@ -4,8 +4,24 @@ import DashboardLayout from "@/components/dashboard/Layout";
 import { useEffect, useState } from "react";
 import { ShieldCheck, UserCircle } from "lucide-react";
 
+type InvestorProfile = {
+    investmentRange: string;
+    region: string;
+    capitalMin: number;
+    capitalMax: number;
+    sectors: string[];
+    stages: string[];
+};
+
+type InvestorUser = {
+    name: string | null;
+    email: string;
+    verified: boolean;
+    investorProfile: InvestorProfile | null;
+};
+
 export default function InvestorProfilePage() {
-    const [user, setUser] = useState<any>(null);
+    const [user, setUser] = useState<InvestorUser | null>(null);
 
     useEffect(() => {
         const load = async () => {

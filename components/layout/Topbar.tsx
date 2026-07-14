@@ -12,9 +12,11 @@ export default function Topbar() {
 
   const title = PAGE_TITLES[pathname] ?? "Dashboard";
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
     logout();
-    router.replace("/access");
+    router.replace("/login");
+    router.refresh();
   };
 
   return (

@@ -5,25 +5,41 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Shield, Sparkles, Target, CheckCircle } from "lucide-react";
 
+type InvestorOnboardingData = {
+    name: string;
+    email: string;
+    entity: string;
+    investmentRange: string;
+    sectors: string[];
+    stages: string[];
+    region: string;
+    capitalMin: string;
+    capitalMax: string;
+    ndaAccepted: boolean;
+};
+
 export default function InvestorOnboarding() {
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const router = useRouter();
 
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<InvestorOnboardingData>({
         name: "",
         email: "",
         entity: "",
         investmentRange: "",
-        sectors: [] as string[],
-        stages: [] as string[],
+        sectors: [],
+        stages: [],
         region: "",
         capitalMin: "",
         capitalMax: "",
         ndaAccepted: false
     });
 
-    const updateFormData = (field: string, value: any) => {
+    const updateFormData = <Key extends keyof InvestorOnboardingData>(
+        field: Key,
+        value: InvestorOnboardingData[Key],
+    ) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
@@ -79,7 +95,7 @@ export default function InvestorOnboarding() {
             localStorage.removeItem("monarch_invite_role");
 
             router.push("/investor/dashboard");
-        } catch (err) {
+        } catch {
             alert("Connection error. Try again.");
             setLoading(false);
         }
@@ -240,7 +256,7 @@ export default function InvestorOnboarding() {
                                 </div>
 
                                 <div className="p-6 bg-black border border-white/5 rounded-2xl max-h-48 overflow-y-auto text-[10px] text-secondary leading-loose font-mono uppercase tracking-widest">
-                                    This Non-Disclosure Agreement (the "Agreement") is made effective...
+                                    This Non-Disclosure Agreement (the &quot;Agreement&quot;) is made effective...
                                     1. Confidential Information includes all pitch decks, metrics...
                                     2. Misuse of data leads to immediate board suspension...
                                     3. Unauthorized disclosure triggers legal remediation.

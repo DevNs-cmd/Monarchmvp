@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.995.0",
+    "@aws-sdk/s3-request-presigner": "3.995.0",
     "@prisma/client": "^5.22.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie": "^0.6.0",
@@ -25,21 +26,21 @@
     "ioredis": "^5.9.3",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.575.0",
-    "next": "14.2.18",
-    "next-auth": "^4.24.13",
+    "next": "^14.2.35",
     "prisma": "^5.22.0",
     "react": "^18",
     "react-dom": "^18",
     "stripe": "^20.3.1",
     "tailwind-merge": "^3.5.0",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@types/node": "^20.19.33",
     "@types/react": "^18.3.28",
     "@types/react-dom": "^18.3.7",
     "eslint": "^8",
-    "eslint-config-next": "14.2.18",
+    "eslint-config-next": "^14.2.35",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.2",

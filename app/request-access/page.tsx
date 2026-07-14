@@ -33,13 +33,13 @@ export default function RequestAccessPage() {
     setLoading(true);
     setEmailExists(false);
     try {
-      const res = await fetch("/api/auth/request-access", {
+      const res = await fetch("/api/access-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: form.name,
           email: form.email,
-          linkedinUrl: form.linkedin,
+          linkedin: form.linkedin,
           role: form.role === "Investor / Executive" ? "INVESTOR" : "FOUNDER",
         }),
       });

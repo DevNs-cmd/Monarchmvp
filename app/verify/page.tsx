@@ -20,7 +20,7 @@ export default function Verify() {
                 const role = data?.user?.role;
                 if (role === "FOUNDER") router.push("/founder/dashboard");
                 if (role === "INVESTOR") router.push("/investor/dashboard");
-                if (role === "ADMIN") router.push("/admin/console");
+                if (role === "ADMIN") router.push("/admin/dashboard");
             } catch (error) {
                 console.error("Verification check failed:", error);
                 router.push("/login");

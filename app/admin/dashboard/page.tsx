@@ -6,6 +6,7 @@ import MonarchTable from "@/components/ui/MonarchTable";
 import MonarchButton from "@/components/ui/MonarchButton";
 import MonarchBadge from "@/components/ui/MonarchBadge";
 import MonarchInput from "@/components/ui/MonarchInput";
+import AdminVettingPanel from "@/components/admin/AdminVettingPanel";
 
 const tabs = ["Vetting", "Deal Flow", "Markets", "Governance", "Revenue"] as const;
 
@@ -34,69 +35,11 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      {active === "Vetting" && <VettingPanel />}
+      {active === "Vetting" && <AdminVettingPanel />}
       {active === "Deal Flow" && <DealFlowPanel />}
       {active === "Governance" && <GovernancePanel />}
       {active === "Revenue" && <RevenuePanel />}
       {active === "Markets" && <MarketsPanel />}
-    </div>
-  );
-}
-
-function VettingPanel() {
-  const queue = [
-    { name: "Alice Warren", role: "FOUNDER", submitted: "Mar 02", status: "PENDING" },
-    { name: "Leo Park", role: "INVESTOR", submitted: "Mar 01", status: "PENDING" },
-  ];
-  const detail = queue[0];
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
-      <MonarchCard>
-        <div className="text-[13px] uppercase tracking-widest4 text-grey-dim mb-4">Queue</div>
-        <div className="space-y-3">
-          {queue.map((item) => (
-            <div
-              key={item.name}
-              className="p-3 border border-white/10 hover:border-gold/30 transition-colors cursor-pointer"
-            >
-              <div className="flex items-center justify-between">
-                <div className="text-[14px] text-white">{item.name}</div>
-                <MonarchBadge variant="gold">{item.role}</MonarchBadge>
-              </div>
-              <div className="text-[12px] text-grey-dim">{item.submitted}</div>
-            </div>
-          ))}
-        </div>
-      </MonarchCard>
-      <MonarchCard padding="lg" tone="dark2" className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-[14px] text-white">{detail.name}</div>
-            <div className="text-[12px] text-grey-dim uppercase tracking-widest4">{detail.role}</div>
-          </div>
-          <MonarchBadge variant="warning">{detail.status}</MonarchBadge>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {["Traction", "Market", "Founder", "Financial", "Execution", "Risk"].map((field) => (
-            <MonarchInput key={field} label={field} placeholder="0-100" />
-          ))}
-        </div>
-        <MonarchInput label="Monarch Index" placeholder="Set score" />
-        <MonarchInput label="Internal Notes" as="textarea" rows={3} />
-
-        <div className="flex gap-3">
-          <MonarchButton variant="primary">Approve</MonarchButton>
-          <MonarchButton variant="ghost">Request Clarification</MonarchButton>
-          <MonarchButton variant="danger">Reject</MonarchButton>
-        </div>
-
-        <div className="space-y-2 text-[12px] text-grey-dim">
-          <div>History</div>
-          <div>Mar 02 — Application received</div>
-          <div>Mar 02 — Assigned to reviewer</div>
-        </div>
-      </MonarchCard>
     </div>
   );
 }

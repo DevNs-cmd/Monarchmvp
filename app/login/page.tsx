@@ -47,7 +47,7 @@ export default function Gatehouse() {
             } else if (data.role === "INVESTOR") {
                 router.push("/investor/onboarding");
             } else if (data.role === "ADMIN") {
-                router.push("/admin/console");
+                router.push("/admin/dashboard");
             }
         } catch (error) {
             console.error("Invite verification failed:", error);
@@ -110,7 +110,7 @@ export default function Gatehouse() {
 
             if (data.role === "FOUNDER") router.push("/founder/dashboard");
             if (data.role === "INVESTOR") router.push("/investor/dashboard");
-            if (data.role === "ADMIN") router.push("/admin/console");
+            if (data.role === "ADMIN") router.push("/admin/dashboard");
         } catch (error) {
             console.error("OTP verification failed:", error);
             setError("Verification failed. Try again.");

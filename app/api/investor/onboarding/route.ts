@@ -1,8 +1,10 @@
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { setSession } from "@/lib/auth";
 import { logAction } from "@/lib/audit";
-import { Role, UserStatus } from "@prisma/client";
+import { Prisma, Role, UserStatus } from "@prisma/client";
 
 export async function POST(request: Request) {
     try {
@@ -10,7 +12,6 @@ export async function POST(request: Request) {
         const {
             name,
             email,
-            entity,
             investmentRange,
             sectors,
             stages,
@@ -89,9 +90,9 @@ export async function POST(request: Request) {
 
         return NextResponse.json({ success: true, userId: result.id });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Investor onboarding error:", error);
-        if (error.code === 'P2002') {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
             return NextResponse.json({ error: "Email already registered" }, { status: 400 });
         }
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });

@@ -1,10 +1,8 @@
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET || "", {
-    apiVersion: "2024-06-20",
-});
 
 export async function POST(request: Request) {
     if (!process.env.STRIPE_SECRET || !process.env.STRIPE_WEBHOOK_SECRET) {
@@ -17,11 +15,12 @@ export async function POST(request: Request) {
     }
 
     const body = await request.text();
+    const stripe = new Stripe(process.env.STRIPE_SECRET);
     let event: Stripe.Event;
 
     try {
         event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET);
-    } catch (err) {
+    } catch {
         return NextResponse.json({ error: "Webhook verification failed" }, { status: 400 });
     }
 
@@ -33,7 +32,7 @@ export async function POST(request: Request) {
                 where: { id: paymentId },
                 data: {
                     status: "PAID",
-                    stripePaymentIntent: session.payment_intent?.toString() || null,
+                    stripePaymentIntentId: session.payment_intent?.toString() || null,
                 },
             });
         }

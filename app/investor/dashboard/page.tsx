@@ -3,7 +3,6 @@
 import MonarchCard from "@/components/ui/MonarchCard";
 import MonarchBadge from "@/components/ui/MonarchBadge";
 import MonarchButton from "@/components/ui/MonarchButton";
-import MonarchGauge from "@/components/ui/MonarchGauge";
 
 const migHighlights = [
   { ticker: "NVDA", score: 92, direction: "up" },

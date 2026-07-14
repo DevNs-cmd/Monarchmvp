@@ -5,23 +5,31 @@ const prisma = new PrismaClient();
 async function main() {
     console.log("Starting seed...");
 
-    // 1. Clear existing data
-    await prisma.monarchIndexHistory.deleteMany({});
-    await prisma.interest.deleteMany({});
-    await prisma.introductionRequest.deleteMany({});
-    await prisma.dealRoom.deleteMany({});
-    await prisma.message.deleteMany({});
-    await prisma.auditLog.deleteMany({});
-    await prisma.payment.deleteMany({});
-    await prisma.startup.deleteMany({});
-    await prisma.founderProfile.deleteMany({});
-    await prisma.investorProfile.deleteMany({});
-    await prisma.user.deleteMany({});
-    await prisma.invite.deleteMany({});
-    await prisma.accessRequest.deleteMany({});
-    await prisma.migMarket.deleteMany({});
-    await prisma.otpToken.deleteMany({});
-    await prisma.watchlist.deleteMany({});
+    // 1. Clear existing data in foreign-key order so the seed remains
+    // repeatable even after deal-room, payment, audit, and review activity.
+    await prisma.$transaction(async (tx) => {
+        await tx.message.deleteMany({});
+        await tx.dealDocument.deleteMany({});
+        await tx.meeting.deleteMany({});
+        await tx.dealRoom.deleteMany({});
+        await tx.interest.deleteMany({});
+        await tx.introductionRequest.deleteMany({});
+        await tx.certificationRecord.deleteMany({});
+        await tx.monarchIndexHistory.deleteMany({});
+        await tx.watchlist.deleteMany({});
+        await tx.activityLog.deleteMany({});
+        await tx.auditLog.deleteMany({});
+        await tx.payment.deleteMany({});
+        await tx.otpToken.deleteMany({});
+        await tx.startup.deleteMany({});
+        await tx.founderProfile.deleteMany({});
+        await tx.investorProfile.deleteMany({});
+        await tx.user.deleteMany({});
+        await tx.invite.deleteMany({});
+        await tx.accessRequest.deleteMany({});
+        await tx.migMarket.deleteMany({});
+        await tx.mIGSignal.deleteMany({});
+    });
 
     // 2. Create Invite Codes
     const invites = [
@@ -105,6 +113,8 @@ async function main() {
             founderProfileId: founderProfile.id,
             score: 92,
             version: 1,
+            breakdown: { traction: 92, team: 92, market: 92 },
+            setBy: "SEED",
         },
     });
 
@@ -138,6 +148,10 @@ async function main() {
             region: "North America",
             capitalMin: 1000000,
             capitalMax: 10000000,
+            sectorPrefs: ["AI Infrastructure", "FinTech"],
+            stagePrefs: ["Seed", "Series A"],
+            ndaSigned: true,
+            ndaSignedAt: new Date(),
             verified: true,
         },
     });

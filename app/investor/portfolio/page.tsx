@@ -5,9 +5,19 @@ import { useEffect, useState } from "react";
 import { ArrowUpRight, Bookmark, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 
+type WatchlistItem = {
+    ticker: string;
+};
+
+type DealRoomItem = {
+    id: string;
+    startupName: string;
+    counterparty: string;
+};
+
 export default function InvestorPortfolio() {
-    const [watchlist, setWatchlist] = useState<any[]>([]);
-    const [dealRooms, setDealRooms] = useState<any[]>([]);
+    const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
+    const [dealRooms, setDealRooms] = useState<DealRoomItem[]>([]);
 
     useEffect(() => {
         const load = async () => {

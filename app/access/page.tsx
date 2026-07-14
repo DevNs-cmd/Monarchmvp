@@ -1,9 +1,5 @@
-import InviteGate from "@/components/monarch/InviteGate";
+import { redirect } from "next/navigation";
 
 export default function AccessPage() {
-  return (
-    <main className="min-h-screen bg-black text-foreground flex items-center justify-center px-6 py-16">
-      <InviteGate />
-    </main>
-  );
+  redirect("/login");
 }

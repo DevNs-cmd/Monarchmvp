@@ -42,3 +42,58 @@ a {
   background-size: 80px 80px;
   pointer-events: none;
 }
+
+@layer components {
+  .bg-black-lux {
+    background:
+      radial-gradient(circle at 50% 0%, rgba(201, 162, 77, 0.08), transparent 34rem),
+      #000;
+  }
+
+  .card-premium {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(17, 17, 17, 0.88);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+  }
+
+  .input-premium {
+    width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    color: #fff;
+    outline: none;
+    transition: border-color 200ms ease, background-color 200ms ease;
+  }
+
+  .input-premium:focus {
+    border-color: rgba(201, 162, 77, 0.75);
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .btn-gold {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #c9a24d;
+    color: #050505;
+    transition: background-color 200ms ease, transform 200ms ease;
+  }
+
+  .btn-gold:hover {
+    background: #e2be7a;
+  }
+
+  .btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(201, 162, 77, 0.45);
+    color: #e2be7a;
+    transition: border-color 200ms ease, color 200ms ease;
+  }
+
+  .btn-outline:hover {
+    border-color: rgba(201, 162, 77, 0.85);
+    color: #f7f1e5;
+  }
+}

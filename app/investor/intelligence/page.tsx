@@ -4,9 +4,25 @@ import DashboardLayout from "@/components/dashboard/Layout";
 import { useEffect, useState } from "react";
 import { Target, Zap } from "lucide-react";
 
+type MarketItem = {
+    ticker: string;
+    recommendation: string;
+    migScore: number;
+    riskIndex: number;
+};
+
+type MatchItem = {
+    id: string;
+    name: string;
+    industry: string;
+    stage: string;
+    monarchIndex: number | null;
+    capitalAsk: number;
+};
+
 export default function IntelligenceBrief() {
-    const [markets, setMarkets] = useState<any[]>([]);
-    const [matches, setMatches] = useState<any[]>([]);
+    const [markets, setMarkets] = useState<MarketItem[]>([]);
+    const [matches, setMatches] = useState<MatchItem[]>([]);
 
     useEffect(() => {
         const load = async () => {
