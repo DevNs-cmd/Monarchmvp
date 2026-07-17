@@ -5,15 +5,22 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { calculateMatchScore } from "@/lib/matching";
 import { logAction } from "@/lib/audit";
+import { STATIC_DEMO_ENABLED, STATIC_STARTUPS } from "@/lib/demo-static";
 
 export async function GET(
     _request: Request,
-    { params }: { params: { startupId: string } }
+    { params }: { params: Promise<{ startupId: string }> }
 ) {
     try {
+        const { startupId } = await params;
         const session = await getSession();
         if (!session || session.role !== "INVESTOR") {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+        if (STATIC_DEMO_ENABLED) {
+            const startup = STATIC_STARTUPS.find((item) => item.id === startupId);
+            if (!startup) return NextResponse.json({ error: "Dossier not found" }, { status: 404 });
+            return NextResponse.json({ startup: { ...startup, deckKey: null }, interest: startupId === "demo-nebula" ? { investorInterest: true, founderInterest: true, status: "MUTUAL" } : null, introduction: startupId === "demo-nebula" ? { status: "APPROVED" } : null });
         }
 
         const investor = await prisma.investorProfile.findUnique({
@@ -57,7 +64,7 @@ export async function GET(
             .sort((a, b) => b.score - a.score)
             .slice(0, 3);
 
-        const target = top.find((s) => s.startup.id === params.startupId);
+        const target = top.find((s) => s.startup.id === startupId);
         if (!target) {
             return NextResponse.json({ error: "Access restricted" }, { status: 403 });
         }
@@ -94,6 +101,11 @@ export async function GET(
                 monarchIndex: startup.monarchIndex,
                 valuation: startup.founder.valuation || null,
                 deckKey: startup.founder.deckUrl || null,
+                summary: startup.founder.summary || null,
+                metrics: startup.founder.metrics || null,
+                financials: startup.founder.financials || null,
+                capTable: startup.founder.capTable || null,
+                riskDisclosures: startup.founder.riskDisclosures || null,
             },
             interest: interest
                 ? {

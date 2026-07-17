@@ -5,6 +5,23 @@ import 'package:flutter/material.dart';
 import '../data/demo_models.dart';
 import '../theme/monarch_theme.dart';
 
+void showMonarchNotice(BuildContext context, String message) {
+  final messenger = ScaffoldMessenger.of(context);
+  messenger
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: MonarchColors.surfaceStrong,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: MonarchColors.strokeStrong),
+        ),
+      ),
+    );
+}
+
 class MonarchAssets {
   static const String baseLogo = 'assets/brand/base_logo.png';
 }

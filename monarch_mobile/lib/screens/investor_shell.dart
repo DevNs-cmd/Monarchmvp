@@ -334,7 +334,10 @@ class StartupDossierScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () {},
+                      onPressed: () => showMonarchNotice(
+                        context,
+                        'Interest recorded. Monarch Core will protect and review the introduction.',
+                      ),
                       child: const Text('Mark interested'),
                     ),
                   ),
@@ -348,6 +351,11 @@ class StartupDossierScreen extends StatelessWidget {
                               builder: (_) =>
                                   InvestorDealRoomScreen(startup: startup),
                             ),
+                          );
+                        } else {
+                          showMonarchNotice(
+                            context,
+                            'Introduction request recorded. Identity unlock follows founder approval.',
                           );
                         }
                       },
@@ -685,14 +693,20 @@ class StockDetailScreen extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () {},
+                  onPressed: () => showMonarchNotice(
+                    context,
+                    '${signal.ticker} added to the private watchlist.',
+                  ),
                   child: const Text('Add to watchlist'),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () => showMonarchNotice(
+                    context,
+                    'Custom ${signal.ticker} intelligence brief requested.',
+                  ),
                   child: const Text('Request report'),
                 ),
               ),

@@ -148,21 +148,30 @@ class _AdminVettingView extends StatelessWidget {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () => showMonarchNotice(
+                        context,
+                        '${item.name} approved and audit evidence recorded.',
+                      ),
                       child: const Text('Approve'),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () {},
+                      onPressed: () => showMonarchNotice(
+                        context,
+                        'Clarification request sent to ${item.name}.',
+                      ),
                       child: const Text('Clarify'),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () {},
+                      onPressed: () => showMonarchNotice(
+                        context,
+                        '${item.name} moved to declined review.',
+                      ),
                       child: const Text('Reject'),
                     ),
                   ),
@@ -297,14 +306,20 @@ class _AdminMarketsView extends StatelessWidget {
                     children: [
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () => showMonarchNotice(
+                            context,
+                            '${signal.ticker} approved for publication.',
+                          ),
                           child: const Text('Approve'),
                         ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () {},
+                          onPressed: () => showMonarchNotice(
+                            context,
+                            '${signal.ticker} opened in controlled override review.',
+                          ),
                           child: const Text('Override'),
                         ),
                       ),

@@ -1,72 +1,67 @@
-# Monarch MVP | Private Opportunities Boardroom
+# Monarch | Private Opportunities
 
-Monarch is an exclusive, invitation-only digital capital boardroom. It combines the privacy of elite venture matchmaking with algorithmic public market intelligence.
+Monarch is an invitation-only capital platform for vetted founders, accredited investors, private deal execution, and market intelligence. This repository contains the Next.js web platform and the Flutter investor-demo app.
 
-## Tech Stack
-- Next.js 14 (App Router)
-- TypeScript
-- TailwindCSS
-- Node.js
-- PostgreSQL + Prisma
-- Redis (optional for future caching)
-- AWS S3 compatible storage
-- Stripe (test mode)
+## Pitch Demo
 
-## Architecture
-Modular monolith with service-isolated structure ready for microservice extraction.
+- Hosted website: <https://monarch-private-opportunities.vercel.app>
+- Android APK: `outputs/release/Monarch-Investor-Demo-v1.0.0.apk`
+- Demo runbook: `PITCH_DEMO_RUNBOOK.md`
 
-## Getting Started
+Use the one-click role buttons on the website. The mobile access codes are:
 
-### 1. Requirements
-- Node.js 18+
-- PostgreSQL
+- Founder: `MONARCH-2026`
+- Investor: `INVESTOR-2026`
+- Monarch Core: `ADMIN-GLOBAL`
 
-### 2. Environment Variables
-Create a `.env` file in the root:
-```env
-DATABASE_URL="postgresql://user:password@localhost:5432/monarch"
-JWT_SECRET="your-secret-key"
-ENCRYPTION_KEY="32-character-long-secure-key-here"
-AWS_ACCESS_KEY_ID="your-key"
-AWS_SECRET_ACCESS_KEY="your-secret"
-AWS_REGION="us-east-1"
-AWS_S3_BUCKET="monarch-dossiers"
-STRIPE_SECRET="sk_test_..."
-STRIPE_WEBHOOK_SECRET="whsec_..."
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
-```
+## Product Areas
 
-### 3. Installation
+- Founder cockpit with readiness scoring, investor approvals, company dossier, agreements, and payments
+- Investor cockpit with curated matching, verification status, boardroom dossiers, introductions, and watchlists
+- Private deal rooms with encrypted messages, activity timelines, meetings, and document workflows
+- MIG Markets intelligence board with signals and watchlists
+- Monarch Core operations for vetting, access requests, deal governance, markets, and revenue
+- Electronic agreement acceptance with signer identity, version, IP, timestamp, and content hash
+
+## Stack
+
+- Next.js 16, React 19, TypeScript, Tailwind CSS
+- PostgreSQL and Prisma
+- Stripe checkout integration with demo fallback
+- Resend OTP delivery with development fallback
+- AWS S3-compatible private document storage
+- Flutter Android/iOS client
+
+## Local Web Setup
+
+Requirements: Node.js 20.9+ and PostgreSQL.
+
 ```bash
 npm install
-npx prisma generate
+cp .env.example .env
 npx prisma migrate dev
 npx prisma db seed
 npm run dev
 ```
 
-## Authentication Protocols
-- Founder Invite: `MONARCH-2026`
-- Investor Invite: `INVESTOR-2026`
-- Admin Invite: `ADMIN-GLOBAL`
+Set `DEMO_MODE=true` and `NEXT_PUBLIC_DEMO_MODE=true` to enable one-click demo access. Set `DEMO_STATIC_MODE=true` only for a stateless hosted pitch environment without PostgreSQL.
 
-## Design System
-- Background: `#000000`
-- Accent: `#C9A24D`
-- Text: `#FFFFFF` / `#9CA3AF`
-- Radius: `rounded-2xl`
+## Verification
 
-## Modules
-- Gatehouse: Invite-only entry
-- Boardroom: Startup dossier registry
-- Deal Room: AES-256 encrypted chat
-- MIG Markets: Algorithmic market intelligence
-- Admin Console: Governance and audit oversight
+```bash
+npm run lint
+npm run typecheck
+npm run build
+npm run smoke
 
-## Seed Data
-Running the seed creates:
-- 3 invite codes
-- 1 admin user
-- 1 founder profile and startup
-- 1 investor profile
-- MIG market data
+cd monarch_mobile
+flutter analyze
+flutter test
+flutter build apk --release
+```
+
+## Architecture
+
+The web application is a modular monolith using Next.js route handlers and Prisma. PostgreSQL is the system of record in normal operation. The hosted pitch deployment uses curated stateless data so it can be shared without exposing infrastructure or incurring third-party service dependencies.
+
+Production launch additionally requires managed PostgreSQL, private object storage and malware scanning, live Stripe and webhook configuration, a verified email domain, KYC/accreditation and market-data providers, counsel-approved agreements, monitoring, and owner-managed mobile signing/store accounts.

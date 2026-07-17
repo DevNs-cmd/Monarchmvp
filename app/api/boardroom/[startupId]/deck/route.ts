@@ -8,9 +8,10 @@ import { logAction } from "@/lib/audit";
 
 export async function GET(
     _request: Request,
-    { params }: { params: { startupId: string } }
+    { params }: { params: Promise<{ startupId: string }> }
 ) {
     try {
+        const { startupId } = await params;
         const session = await getSession();
         if (!session || session.role !== "INVESTOR") {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -22,7 +23,7 @@ export async function GET(
         if (!investor) return NextResponse.json({ error: "Investor profile missing" }, { status: 400 });
 
         const startup = await prisma.startup.findUnique({
-            where: { id: params.startupId },
+            where: { id: startupId },
             include: { founder: true },
         });
         if (!startup?.founder.deckUrl) {

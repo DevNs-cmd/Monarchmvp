@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logAction } from "@/lib/audit";
+import { STATIC_DEMO_ENABLED } from "@/lib/demo-static";
 
 export async function POST(request: Request) {
     try {
@@ -20,6 +21,7 @@ export async function POST(request: Request) {
         if (session.role !== "INVESTOR") {
             return NextResponse.json({ error: "Only investors can indicate interest" }, { status: 403 });
         }
+        if (STATIC_DEMO_ENABLED) return NextResponse.json({ success: true, dealRoomId: null, simulated: true });
 
         const investor = await prisma.investorProfile.findUnique({
             where: { userId: session.userId },

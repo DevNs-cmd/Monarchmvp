@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { setSession } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
+import { hashOtp } from "@/lib/otp";
 
 export async function POST(request: Request) {
     try {
@@ -19,10 +20,11 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Too many attempts. Try again later." }, { status: 429 });
         }
 
+        const normalizedEmail = String(email).trim().toLowerCase();
         const token = await prisma.otpToken.findFirst({
             where: {
-                email: email.toLowerCase(),
-                code,
+                email: normalizedEmail,
+                hashedOtp: hashOtp(normalizedEmail, String(code)),
                 used: false,
                 expiresAt: { gt: new Date() },
             },
@@ -35,19 +37,19 @@ export async function POST(request: Request) {
 
         await prisma.otpToken.update({
             where: { id: token.id },
-            data: { used: true },
+            data: { used: true, usedAt: new Date() },
         });
 
         const user = await prisma.user.findUnique({
-            where: { email: email.toLowerCase() },
+            where: { email: normalizedEmail },
         });
 
         if (!user) {
             return NextResponse.json({ error: "User not found. Use an invite to onboard first." }, { status: 404 });
         }
 
-        if (user.status === "SUSPENDED") {
-            return NextResponse.json({ error: "Account suspended" }, { status: 403 });
+        if (user.status === "SUSPENDED" || user.status === "BLACKLISTED") {
+            return NextResponse.json({ error: "Account access is restricted" }, { status: 403 });
         }
 
         await setSession({

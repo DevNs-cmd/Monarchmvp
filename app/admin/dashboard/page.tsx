@@ -1,228 +1,82 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import MonarchCard from "@/components/ui/MonarchCard";
 import MonarchTable from "@/components/ui/MonarchTable";
 import MonarchButton from "@/components/ui/MonarchButton";
 import MonarchBadge from "@/components/ui/MonarchBadge";
-import MonarchInput from "@/components/ui/MonarchInput";
 import AdminVettingPanel from "@/components/admin/AdminVettingPanel";
 
 const tabs = ["Vetting", "Deal Flow", "Markets", "Governance", "Revenue"] as const;
+type Tab = (typeof tabs)[number];
+type Operations = {
+  dealFlow: { activeDeals: number; introductions: number; feesTriggered: number; rows: Array<Record<string, unknown>> };
+  governance: Array<{ id: string; name: string; role: string; status: string; joined: string; lastActive: string }>;
+  revenue: { byType: Record<string, number>; total: number; funnel: Array<{ name: string; count: number }> };
+  markets: Array<{ id: string; ticker: string; score: number; risk: number; recommendation: string; published: boolean }>;
+};
 
 export default function AdminDashboard() {
-  const [active, setActive] = useState<(typeof tabs)[number]>("Vetting");
+  const [active, setActive] = useState<Tab>("Vetting");
+  const [operations, setOperations] = useState<Operations | null>(null);
+  const [notice, setNotice] = useState("");
+
+  const load = useCallback(async () => {
+    const response = await fetch("/api/admin/operations", { cache: "no-store" });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Unable to load operations");
+    setOperations(data);
+  }, []);
+  useEffect(() => { load().catch((reason) => setNotice(reason instanceof Error ? reason.message : "Unable to load operations")); }, [load]);
+
+  const suspend = async (userId: string) => {
+    const response = await fetch("/api/admin/users/suspend", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId }) });
+    const data = await response.json();
+    if (!response.ok) { setNotice(data.error || "Unable to suspend member"); return; }
+    setNotice("Member suspended and active sessions revoked.");
+    await load();
+  };
 
   return (
-    <div className="min-h-screen bg-black text-white px-6 md:px-12 py-10 space-y-8">
-      <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <div className="text-[11px] uppercase tracking-widest4 text-grey-dim">Admin Console</div>
-          <h1 className="font-serif text-3xl font-light">Governance & Oversight</h1>
-        </div>
-        <div className="flex gap-4">
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              className={`px-3 py-2 text-[12px] uppercase tracking-widest4 ${
-                active === tab ? "text-gold border-b border-gold" : "text-grey hover:text-white"
-              }`}
-              onClick={() => setActive(tab)}
-            >
-              {tab}
-            </button>
-          ))}
+    <div className="space-y-8">
+      <header className="flex flex-col justify-between gap-5 xl:flex-row xl:items-end">
+        <div><div className="text-[11px] uppercase tracking-widest4 text-grey-dim">Monarch Core</div><h1 className="font-serif text-3xl font-light">Governance & oversight</h1></div>
+        <div className="flex max-w-full gap-4 overflow-x-auto">
+          {tabs.map((tab) => <button key={tab} className={`whitespace-nowrap px-2 py-2 text-[11px] uppercase tracking-widest4 ${active === tab ? "border-b border-gold text-gold" : "text-grey hover:text-white"}`} onClick={() => setActive(tab)}>{tab}</button>)}
         </div>
       </header>
-
-      {active === "Vetting" && <AdminVettingPanel />}
-      {active === "Deal Flow" && <DealFlowPanel />}
-      {active === "Governance" && <GovernancePanel />}
-      {active === "Revenue" && <RevenuePanel />}
-      {active === "Markets" && <MarketsPanel />}
+      {notice ? <div className="border border-gold/30 bg-gold/5 px-4 py-3 text-sm text-gold">{notice}</div> : null}
+      {active === "Vetting" ? <AdminVettingPanel /> : null}
+      {active !== "Vetting" && !operations ? <MonarchCard>Loading operations...</MonarchCard> : null}
+      {operations && active === "Deal Flow" ? <DealFlowPanel data={operations.dealFlow} /> : null}
+      {operations && active === "Governance" ? <GovernancePanel members={operations.governance} onSuspend={suspend} /> : null}
+      {operations && active === "Revenue" ? <RevenuePanel data={operations.revenue} /> : null}
+      {operations && active === "Markets" ? <MarketsPanel items={operations.markets} /> : null}
     </div>
   );
 }
 
-function DealFlowPanel() {
-  const rows = [
-    { founder: "Atlas Rail", investor: "Helios Capital", date: "Mar 02", stage: "BOARDROOM", fee: "Pending" },
-    { founder: "CarbonLayer", investor: "Northpeak", date: "Mar 01", stage: "TERM_SHEET", fee: "Triggered" },
-  ];
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {[
-          { label: "Active Deals", value: 12 },
-          { label: "Intros Made", value: 34 },
-          { label: "Fees Triggered", value: 5 },
-        ].map((stat) => (
-          <MonarchCard key={stat.label}>
-            <div className="text-[11px] text-grey-dim uppercase tracking-widest4">{stat.label}</div>
-            <div className="text-[32px] text-gold font-serif">{stat.value}</div>
-          </MonarchCard>
-        ))}
-      </div>
-      <MonarchTable
-        columns={[
-          { key: "founder", header: "Founder" },
-          { key: "investor", header: "Investor" },
-          { key: "date", header: "Date" },
-          { key: "stage", header: "Stage", render: (row) => <MonarchBadge variant="gold">{row.stage}</MonarchBadge> },
-          { key: "fee", header: "Success Fee", render: (row) => <MonarchBadge variant={row.fee === "Triggered" ? "success" : "warning"}>{row.fee}</MonarchBadge> },
-        ]}
-        rows={rows}
-      />
-    </div>
-  );
+function DealFlowPanel({ data }: { data: Operations["dealFlow"] }) {
+  const rows: Array<Record<string, unknown>> = data.rows.map((row) => ({ ...row, date: new Date(String(row.date)).toLocaleDateString(), fee: String(row.fee).replaceAll("_", " ") }));
+  return <div className="space-y-6">
+    <div className="grid gap-4 md:grid-cols-3">{[{ label: "Active deals", value: data.activeDeals }, { label: "Introductions", value: data.introductions }, { label: "Fees triggered", value: data.feesTriggered }].map((stat) => <MonarchCard key={stat.label}><div className="text-[11px] uppercase tracking-widest4 text-grey-dim">{stat.label}</div><div className="font-serif text-[32px] text-gold">{stat.value}</div></MonarchCard>)}</div>
+    <MonarchTable columns={[{ key: "founder", header: "Founder" }, { key: "investor", header: "Investor" }, { key: "date", header: "Opened" }, { key: "stage", header: "Stage", render: (row) => <MonarchBadge variant="gold">{String(row.stage).replaceAll("_", " ")}</MonarchBadge> }, { key: "fee", header: "Success fee", render: (row) => <MonarchBadge variant={String(row.fee).includes("TRIGGERED") ? "success" : "warning"}>{String(row.fee)}</MonarchBadge> }]} rows={rows} />
+  </div>;
 }
 
-function GovernancePanel() {
-  const members = [
-    { name: "Alice Warren", role: "FOUNDER", status: "ACTIVE", joined: "Feb 12", lastActive: "Mar 2" },
-    { name: "Leo Park", role: "INVESTOR", status: "ACTIVE", joined: "Jan 28", lastActive: "Mar 1" },
-  ];
-  const blacklist = [{ name: "Evan Shaw", reason: "Circumvention", date: "Feb 14" }];
-  return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap gap-4">
-        <MonarchInput label="Search" placeholder="Name or email" />
-        <MonarchInput label="Role" placeholder="Any" />
-        <MonarchInput label="Status" placeholder="Any" />
-      </div>
-      <MonarchTable
-        columns={[
-          { key: "name", header: "Name" },
-          { key: "role", header: "Role" },
-          { key: "status", header: "Status", render: (row) => <MonarchBadge variant="gold">{row.status}</MonarchBadge> },
-          { key: "joined", header: "Joined" },
-          { key: "lastActive", header: "Last Active" },
-          {
-            key: "actions",
-            header: "Actions",
-            render: () => (
-              <div className="flex gap-2">
-                <MonarchButton variant="danger" size="sm">
-                  Suspend
-                </MonarchButton>
-                <MonarchButton variant="ghost" size="sm">
-                  Blacklist
-                </MonarchButton>
-              </div>
-            ),
-          },
-        ]}
-        rows={members}
-      />
-
-      <div>
-        <div className="text-[13px] uppercase tracking-widest4 text-grey-dim mb-3">Blacklist</div>
-        <MonarchTable
-          columns={[
-            { key: "name", header: "Name" },
-            { key: "reason", header: "Reason" },
-            { key: "date", header: "Date" },
-          ]}
-          rows={blacklist}
-        />
-      </div>
-    </div>
-  );
+function GovernancePanel({ members, onSuspend }: { members: Operations["governance"]; onSuspend: (id: string) => Promise<void> }) {
+  const rows = members.map((member) => ({ ...member, joined: new Date(member.joined).toLocaleDateString(), lastActive: new Date(member.lastActive).toLocaleDateString() }));
+  return <MonarchTable columns={[{ key: "name", header: "Member" }, { key: "role", header: "Role" }, { key: "status", header: "Status", render: (row) => <MonarchBadge variant={row.status === "ACTIVE" ? "success" : "warning"}>{row.status}</MonarchBadge> }, { key: "joined", header: "Joined" }, { key: "lastActive", header: "Updated" }, { key: "actions", header: "Action", render: (row) => row.status === "ACTIVE" && row.role !== "ADMIN" ? <MonarchButton variant="danger" size="sm" onClick={() => onSuspend(String(row.id))}>Suspend</MonarchButton> : <span className="text-grey-dim">Governed</span> }]} rows={rows} />;
 }
 
-function RevenuePanel() {
-  const streams = [
-    { label: "Screening Fees", value: 120000 },
-    { label: "Boardroom Access", value: 84000 },
-    { label: "Reports", value: 42000 },
-    { label: "Algo Access", value: 36000 },
-  ];
-  const total = streams.reduce((sum, s) => sum + s.value, 0);
-  const funnel = [
-    { name: "Requests", count: 420 },
-    { name: "Verified", count: 260 },
-    { name: "Founder Dossiers", count: 180 },
-    { name: "Shortlisted", count: 90 },
-    { name: "Boardroom", count: 55 },
-    { name: "Funded", count: 18 },
-  ];
-  return (
-    <div className="space-y-8">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {streams.map((s) => (
-          <MonarchCard key={s.label}>
-            <div className="text-[11px] text-grey-dim uppercase tracking-widest4">{s.label}</div>
-            <div className="text-[24px] text-gold font-medium">${(s.value / 1000).toFixed(1)}k</div>
-          </MonarchCard>
-        ))}
-      </div>
-      <MonarchCard>
-        <div className="text-[13px] uppercase tracking-widest4 text-grey-dim mb-4">Revenue by Stream</div>
-        <div className="space-y-3">
-          {streams.map((s) => (
-            <div key={s.label} className="flex items-center gap-3">
-              <div className="w-40 text-[13px] text-grey-light">{s.label}</div>
-              <div className="flex-1 h-2 bg-white/5">
-                <div className="h-full bg-gold" style={{ width: `${(s.value / total) * 100}%` }} />
-              </div>
-              <div className="text-[13px] text-grey-light">${(s.value / 1000).toFixed(1)}k</div>
-            </div>
-          ))}
-        </div>
-      </MonarchCard>
-
-      <MonarchCard>
-        <div className="text-[13px] uppercase tracking-widest4 text-grey-dim mb-4">Funnel</div>
-        <div className="space-y-3">
-          {funnel.map((step, idx) => (
-            <div key={step.name} className="flex items-center justify-between">
-              <div className="text-[13px] text-grey-light">{step.name}</div>
-              <div className="text-[13px] text-white">{step.count}</div>
-              {idx < funnel.length - 1 ? (
-                <div className="text-[12px] text-grey-dim">
-                  {(100 - (funnel[idx + 1].count / step.count) * 100).toFixed(0)}% drop
-                </div>
-              ) : (
-                <div className="text-[12px] text-grey-dim">Conversion</div>
-              )}
-            </div>
-          ))}
-        </div>
-      </MonarchCard>
-    </div>
-  );
+function RevenuePanel({ data }: { data: Operations["revenue"] }) {
+  const streams = useMemo(() => Object.entries(data.byType).map(([label, value]) => ({ label: label.replaceAll("_", " "), value })), [data.byType]);
+  return <div className="space-y-8">
+    <div className="grid gap-4 md:grid-cols-3"><MonarchCard><div className="text-[11px] uppercase tracking-widest4 text-grey-dim">Recorded revenue</div><div className="font-serif text-[30px] text-gold">${data.total.toLocaleString()}</div></MonarchCard>{streams.slice(0, 2).map((stream) => <MonarchCard key={stream.label}><div className="text-[11px] uppercase tracking-widest4 text-grey-dim">{stream.label}</div><div className="font-serif text-[30px] text-gold">${stream.value.toLocaleString()}</div></MonarchCard>)}</div>
+    <MonarchCard><div className="mb-5 text-[13px] uppercase tracking-widest4 text-grey-dim">Commercial funnel</div><div className="space-y-4">{data.funnel.map((step, index) => <div key={step.name} className="grid grid-cols-[1fr_auto] items-center gap-4 border-t border-white/5 pt-3 first:border-t-0"><span className="text-sm text-grey-light">{step.name}</span><span className="text-gold">{step.count}</span>{index < data.funnel.length - 1 ? <div className="col-span-2 h-1 bg-white/5"><div className="h-full bg-gold" style={{ width: `${Math.min(100, Math.max(4, step.count ? (data.funnel[index + 1].count / step.count) * 100 : 4))}%` }} /></div> : null}</div>)}</div></MonarchCard>
+  </div>;
 }
 
-function MarketsPanel() {
-  const pending = [
-    { ticker: "MDB", score: 78, rec: "Neutral" },
-    { ticker: "PLTR", score: 64, rec: "High Risk" },
-  ];
-  return (
-    <div className="space-y-4">
-      <div className="text-[13px] uppercase tracking-widest4 text-grey-dim">Pending MIG signals</div>
-      <MonarchTable
-        columns={[
-          { key: "ticker", header: "Ticker" },
-          { key: "score", header: "Score" },
-          { key: "rec", header: "Recommendation" },
-          {
-            key: "actions",
-            header: "Actions",
-            render: () => (
-              <div className="flex gap-2">
-                <MonarchButton size="sm" variant="primary">
-                  Approve
-                </MonarchButton>
-                <MonarchButton size="sm" variant="ghost">
-                  Override
-                </MonarchButton>
-              </div>
-            ),
-          },
-        ]}
-        rows={pending}
-      />
-    </div>
-  );
+function MarketsPanel({ items }: { items: Operations["markets"] }) {
+  return <MonarchTable columns={[{ key: "ticker", header: "Ticker" }, { key: "score", header: "MIG score" }, { key: "risk", header: "Risk" }, { key: "recommendation", header: "Recommendation" }, { key: "published", header: "State", render: (row) => <MonarchBadge variant={row.published ? "success" : "warning"}>{row.published ? "Published" : "Council review"}</MonarchBadge> }]} rows={items} />;
 }

@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { STATIC_DEMO_ENABLED } from "@/lib/demo-static";
 
 export async function GET() {
     try {
@@ -10,6 +11,7 @@ export async function GET() {
         if (!session) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
+        if (STATIC_DEMO_ENABLED) return NextResponse.json({ items: [{ id: "demo-deal-nebula", startupName: "Nebula AI", counterparty: session.role === "FOUNDER" ? "Noah Mercer" : "Nebula AI" }] });
 
         if (session.role === "INVESTOR") {
             const investor = await prisma.investorProfile.findUnique({

@@ -6,6 +6,7 @@ import type { JWTPayload } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { encrypt, decrypt } from "@/lib/crypto";
 import { logAction } from "@/lib/audit";
+import { STATIC_DEAL_MESSAGES, STATIC_DEMO_ENABLED } from "@/lib/demo-static";
 
 async function authorize(session: JWTPayload, dealId: string) {
     const dealRoom = await prisma.dealRoom.findUnique({
@@ -42,24 +43,26 @@ async function authorize(session: JWTPayload, dealId: string) {
 
 export async function GET(
     _request: Request,
-    { params }: { params: { dealId: string } }
+    { params }: { params: Promise<{ dealId: string }> }
 ) {
     try {
+        const { dealId } = await params;
         const session = await getSession();
         if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        if (STATIC_DEMO_ENABLED) return NextResponse.json({ items: STATIC_DEAL_MESSAGES });
 
-        const result = await authorize(session, params.dealId);
+        const result = await authorize(session, dealId);
         if ("error" in result) {
             return NextResponse.json({ error: result.error }, { status: 403 });
         }
 
         const messages = await prisma.message.findMany({
-            where: { dealRoomId: params.dealId },
+            where: { dealRoomId: dealId },
             include: { sender: true },
             orderBy: { createdAt: "asc" },
         });
 
-        await logAction(session.userId, "DEALROOM_ENTRY", `DealRoom:${params.dealId}`);
+        await logAction(session.userId, "DEALROOM_ENTRY", `DealRoom:${dealId}`);
 
         const items = messages.map((m) => ({
             id: m.id,
@@ -78,13 +81,16 @@ export async function GET(
 
 export async function POST(
     request: Request,
-    { params }: { params: { dealId: string } }
+    { params }: { params: Promise<{ dealId: string }> }
 ) {
     try {
+        const { dealId } = await params;
         const session = await getSession();
         if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-        const result = await authorize(session, params.dealId);
+        if (STATIC_DEMO_ENABLED) return NextResponse.json({ id: `demo-message-${Date.now()}`, simulated: true });
+
+        const result = await authorize(session, dealId);
         if ("error" in result) {
             return NextResponse.json({ error: result.error }, { status: 403 });
         }
@@ -95,13 +101,13 @@ export async function POST(
         const encryptedContent = encrypt(content);
         const message = await prisma.message.create({
             data: {
-                dealRoomId: params.dealId,
+                dealRoomId: dealId,
                 senderId: session.userId,
                 encryptedContent,
             },
         });
 
-        await logAction(session.userId, "DEALROOM_MESSAGE", `DealRoom:${params.dealId}`);
+        await logAction(session.userId, "DEALROOM_MESSAGE", `DealRoom:${dealId}`);
 
         return NextResponse.json({ id: message.id });
     } catch (error) {

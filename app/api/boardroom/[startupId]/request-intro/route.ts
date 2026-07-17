@@ -5,16 +5,19 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logAction } from "@/lib/audit";
 import { calculateMatchScore } from "@/lib/matching";
+import { STATIC_DEMO_ENABLED } from "@/lib/demo-static";
 
 export async function POST(
     _request: Request,
-    { params }: { params: { startupId: string } }
+    { params }: { params: Promise<{ startupId: string }> }
 ) {
     try {
+        const { startupId } = await params;
         const session = await getSession();
         if (!session || session.role !== "INVESTOR") {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
+        if (STATIC_DEMO_ENABLED) return NextResponse.json({ success: true, status: "PENDING", simulated: true });
 
         const investor = await prisma.investorProfile.findUnique({
             where: { userId: session.userId },
@@ -56,7 +59,7 @@ export async function POST(
             .sort((a, b) => b.score - a.score)
             .slice(0, 3);
 
-        const target = top.find((s) => s.startup.id === params.startupId);
+        const target = top.find((s) => s.startup.id === startupId);
         if (!target) {
             return NextResponse.json({ error: "Startup unavailable" }, { status: 404 });
         }

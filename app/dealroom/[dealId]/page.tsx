@@ -10,6 +10,7 @@ import {
     Calendar
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 
 type Message = {
     id: string;
@@ -19,7 +20,8 @@ type Message = {
     createdAt: string;
 };
 
-export default function DealRoom({ params }: { params: { dealId: string } }) {
+export default function DealRoom() {
+    const params = useParams<{ dealId: string }>();
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(true);

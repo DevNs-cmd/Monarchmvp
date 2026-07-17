@@ -5,6 +5,14 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PaymentType } from "@prisma/client";
 import Stripe from "stripe";
+import { STATIC_DEMO_ENABLED } from "@/lib/demo-static";
+
+const PRODUCTS: Record<PaymentType, { name: string; amount: number }> = {
+    SCREENING_FEE: { name: "Monarch Screening Fee", amount: 499 },
+    BOARDROOM_ACCESS: { name: "Monarch Boardroom Access", amount: 1200 },
+    ALGO_ACCESS: { name: "Monarch Markets Access", amount: 990 },
+    CUSTOM_REPORT: { name: "Monarch Custom Intelligence Report", amount: 450 },
+};
 
 export async function POST(request: Request) {
     try {
@@ -13,19 +21,40 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
+        const body = await request.json();
+        const { type } = body;
+        const paymentType: PaymentType = Object.values(PaymentType).includes(type as PaymentType)
+            ? type as PaymentType
+            : PaymentType.CUSTOM_REPORT;
+        const product = PRODUCTS[paymentType];
+
+        if (STATIC_DEMO_ENABLED) {
+            return NextResponse.json({ demo: true, simulated: true, payment: { id: `demo-payment-${Date.now()}`, amount: product.amount, currency: "USD", type: paymentType, status: "SUCCEEDED", createdAt: new Date().toISOString() } });
+        }
+
+        if (!process.env.STRIPE_SECRET && process.env.DEMO_MODE === "true") {
+            const payment = await prisma.payment.create({
+                data: {
+                    userId: session.userId,
+                    amount: product.amount,
+                    currency: "USD",
+                    type: paymentType,
+                    status: "SUCCEEDED",
+                },
+            });
+            return NextResponse.json({ demo: true, payment });
+        }
+
         if (!process.env.STRIPE_SECRET) {
-            return NextResponse.json({ error: "Stripe not configured" }, { status: 500 });
+            return NextResponse.json({ error: "Payment processing is not configured" }, { status: 503 });
         }
 
         const stripe = new Stripe(process.env.STRIPE_SECRET);
-        const body = await request.json();
-        const { type } = body;
-        const paymentType = Object.values(PaymentType).includes(type) ? type : PaymentType.CUSTOM_REPORT;
 
         const payment = await prisma.payment.create({
             data: {
                 userId: session.userId,
-                amount: 499,
+                amount: product.amount,
                 currency: "USD",
                 type: paymentType,
                 status: "PENDING",
@@ -40,9 +69,9 @@ export async function POST(request: Request) {
                     price_data: {
                         currency: "usd",
                         product_data: {
-                            name: "Monarch Custom Intelligence Report",
+                            name: product.name,
                         },
-                        unit_amount: 49900,
+                        unit_amount: product.amount * 100,
                     },
                     quantity: 1,
                 },

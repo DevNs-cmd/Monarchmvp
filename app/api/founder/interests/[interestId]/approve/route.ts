@@ -4,19 +4,22 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logAction } from "@/lib/audit";
+import { STATIC_DEMO_ENABLED } from "@/lib/demo-static";
 
 export async function POST(
     _request: Request,
-    { params }: { params: { interestId: string } }
+    { params }: { params: Promise<{ interestId: string }> }
 ) {
     try {
+        const { interestId } = await params;
         const session = await getSession();
         if (!session || session.role !== "FOUNDER") {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
+        if (STATIC_DEMO_ENABLED) return NextResponse.json({ success: true, dealRoomId: "demo-deal-nebula", simulated: true });
 
         const interest = await prisma.interest.findUnique({
-            where: { id: params.interestId },
+            where: { id: interestId },
             include: { startup: true },
         });
 

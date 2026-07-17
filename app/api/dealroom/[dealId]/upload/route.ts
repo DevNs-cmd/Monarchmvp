@@ -35,13 +35,14 @@ async function authorize(session: JWTPayload, dealId: string) {
 
 export async function POST(
     request: Request,
-    { params }: { params: { dealId: string } }
+    { params }: { params: Promise<{ dealId: string }> }
 ) {
     try {
+        const { dealId } = await params;
         const session = await getSession();
         if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-        const auth = await authorize(session, params.dealId);
+        const auth = await authorize(session, dealId);
         if ("error" in auth) return NextResponse.json({ error: auth.error }, { status: 403 });
 
         const formData = await request.formData();
@@ -62,11 +63,11 @@ export async function POST(
         }
 
         const fileName = (file as File).name || "attachment";
-        const key = `dealrooms/${params.dealId}/${Date.now()}-${fileName.replace(/\\s+/g, "_")}`;
+        const key = `dealrooms/${dealId}/${Date.now()}-${fileName.replace(/\\s+/g, "_")}`;
         await uploadToS3(buffer, key, (file as File).type || "application/octet-stream");
         const url = await getPresignedUrl(key);
 
-        await logAction(session.userId, "DEALROOM_UPLOAD", `DealRoom:${params.dealId}`);
+        await logAction(session.userId, "DEALROOM_UPLOAD", `DealRoom:${dealId}`);
 
         return NextResponse.json({ key, url });
     } catch (error) {

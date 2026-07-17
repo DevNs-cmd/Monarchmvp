@@ -48,6 +48,7 @@ model User {
   payments        Payment[]
   messages        Message[]
   watchlists      Watchlist[]
+  agreements      Agreement[]
   inviteId        String?          @unique
   inviteUsed      Invite?          @relation("InviteUsage", fields: [inviteId], references: [id])
   otpTokens       OtpToken[]
@@ -79,30 +80,41 @@ model FounderProfile {
   successFeeAgreedAt           DateTime?
   advisoryEquityAcknowledgedAt DateTime?
   status                       String                @default("UNDER_REVIEW")
+  summary                      String?
+  metrics                      Json?
+  financials                   Json?
+  capTable                     Json?
+  riskDisclosures              Json?
+  kycStatus                    String                @default("PENDING")
   startup                      Startup?
   indexHistory                 MonarchIndexHistory[]
   certifications               CertificationRecord[]
 }
 
 model InvestorProfile {
-  id                   String                @id @default(cuid())
-  user                 User                  @relation(fields: [userId], references: [id])
-  userId               String                @unique
-  investmentRange      String
-  sectors              String[]
-  stages               String[]
-  region               String
-  capitalMin           Float                 @default(0)
-  capitalMax           Float                 @default(0)
-  capitalRangeMin      Float?
-  capitalRangeMax      Float?
-  sectorPrefs          String[]              @default([])
-  stagePrefs           String[]              @default([])
-  ndaSigned            Boolean               @default(false)
-  ndaSignedAt          DateTime?
-  verified             Boolean               @default(false)
-  interests            Interest[]
-  introductionRequests IntroductionRequest[]
+  id                      String                @id @default(cuid())
+  user                    User                  @relation(fields: [userId], references: [id])
+  userId                  String                @unique
+  investmentRange         String
+  organization            String?
+  investorType            String?
+  sectors                 String[]
+  stages                  String[]
+  region                  String
+  capitalMin              Float                 @default(0)
+  capitalMax              Float                 @default(0)
+  capitalRangeMin         Float?
+  capitalRangeMax         Float?
+  sectorPrefs             String[]              @default([])
+  stagePrefs              String[]              @default([])
+  ndaSigned               Boolean               @default(false)
+  ndaSignedAt             DateTime?
+  verified                Boolean               @default(false)
+  kycStatus               String                @default("PENDING")
+  accreditationStatus     String                @default("PENDING")
+  accreditationVerifiedAt DateTime?
+  interests               Interest[]
+  introductionRequests    IntroductionRequest[]
 }
 
 model Startup {
@@ -163,6 +175,13 @@ model DealRoom {
   messages            Message[]
   documents           DealDocument[]
   meetings            Meeting[]
+  events              DealEvent[]
+  introducedAt        DateTime       @default(now())
+  fundedAt            DateTime?
+  fundedAmount        Float?
+  successFeeRate      Float          @default(0.025)
+  successFeeAmount    Float?
+  successFeeStatus    String         @default("NOT_TRIGGERED")
   createdAt           DateTime       @default(now())
 
   @@unique([startupId, investorId])
@@ -262,16 +281,16 @@ model MonarchIndexHistory {
 }
 
 model OtpToken {
-  id        String   @id @default(cuid())
-  user      User?    @relation(fields: [userId], references: [id])
+  id        String    @id @default(cuid())
+  user      User?     @relation(fields: [userId], references: [id])
   userId    String?
   email     String?
   code      String?
   hashedOtp String?
   expiresAt DateTime
-  used      Boolean  @default(false)
+  used      Boolean   @default(false)
   usedAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@index([userId])
   @@index([email])
@@ -322,6 +341,38 @@ model Meeting {
   createdAt     DateTime @default(now())
 }
 
+model Agreement {
+  id          String          @id @default(cuid())
+  user        User            @relation(fields: [userId], references: [id])
+  userId      String
+  type        AgreementType
+  version     String          @default("2026.1")
+  status      AgreementStatus @default(PENDING)
+  signerName  String?
+  acceptedAt  DateTime?
+  acceptedIp  String?
+  contentHash String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@unique([userId, type, version])
+  @@index([userId, status])
+}
+
+model DealEvent {
+  id         String     @id @default(cuid())
+  dealRoom   DealRoom   @relation(fields: [dealRoomId], references: [id])
+  dealRoomId String
+  type       String
+  actorId    String
+  fromStage  DealStage?
+  toStage    DealStage?
+  metadata   Json?
+  createdAt  DateTime   @default(now())
+
+  @@index([dealRoomId, createdAt])
+}
+
 enum PaymentType {
   SCREENING_FEE
   BOARDROOM_ACCESS
@@ -345,4 +396,19 @@ enum DealStage {
   DOCUMENTS_EXCHANGED
   TERM_SHEET
   FUNDED
+}
+
+enum AgreementType {
+  PLATFORM_TERMS
+  INVESTOR_NDA
+  SUCCESS_FEE
+  ADVISORY_EQUITY
+  DATA_ROOM_CONFIDENTIALITY
+}
+
+enum AgreementStatus {
+  PENDING
+  ACCEPTED
+  SUPERSEDED
+  REVOKED
 }

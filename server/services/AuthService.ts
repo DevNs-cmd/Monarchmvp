@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { Role } from "@prisma/client";
 
 /**
  * Monarch Authentication Service
@@ -17,12 +18,12 @@ export class AuthService {
         return invite;
     }
 
-    static async registerUser(email: string, role: string) {
+    static async registerUser(email: string, role: Role) {
         // Logic for creating user and profiles
         return await prisma.user.create({
             data: {
                 email,
-                role: role as any,
+                role,
                 status: "PENDING",
             },
         });

@@ -1,0 +1,7 @@
+monarch_mobile
+outputs
+legacy_routes
+Monarch-release.apk
+*.pdf
+.env
+.env.*

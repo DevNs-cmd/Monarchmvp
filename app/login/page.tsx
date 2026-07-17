@@ -4,7 +4,13 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, ArrowRight, Mail } from "lucide-react";
+import { ShieldCheck, ArrowRight, Mail, Rocket, Landmark, Settings2 } from "lucide-react";
+
+const ROLE_DESTINATIONS = {
+    FOUNDER: "/founder",
+    INVESTOR: "/investor",
+    ADMIN: "/admin/dashboard",
+} as const;
 
 export default function Gatehouse() {
     const [code, setCode] = useState("");
@@ -15,6 +21,7 @@ export default function Gatehouse() {
     const [otpRequested, setOtpRequested] = useState(false);
     const [otp, setOtp] = useState("");
     const [otpHint, setOtpHint] = useState("");
+    const [demoLoading, setDemoLoading] = useState<string | null>(null);
     const router = useRouter();
 
     const handleVerify = async (e: React.FormEvent) => {
@@ -108,14 +115,36 @@ export default function Gatehouse() {
                 return;
             }
 
-            if (data.role === "FOUNDER") router.push("/founder/dashboard");
-            if (data.role === "INVESTOR") router.push("/investor/dashboard");
-            if (data.role === "ADMIN") router.push("/admin/dashboard");
+            const destination = ROLE_DESTINATIONS[data.role as keyof typeof ROLE_DESTINATIONS];
+            if (destination) router.push(destination);
         } catch (error) {
             console.error("OTP verification failed:", error);
             setError("Verification failed. Try again.");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDemoLogin = async (role: keyof typeof ROLE_DESTINATIONS) => {
+        setDemoLoading(role);
+        setError("");
+        try {
+            const response = await fetch("/api/auth/demo-login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ role }),
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                setError(data.error || "Demo access unavailable");
+                return;
+            }
+            router.push(ROLE_DESTINATIONS[role]);
+            router.refresh();
+        } catch {
+            setError("Unable to start the demo session.");
+        } finally {
+            setDemoLoading(null);
         }
     };
 
@@ -252,7 +281,33 @@ export default function Gatehouse() {
                         </form>
                     )}
 
-                    <div className="mt-12 pt-8 border-t border-white/5 space-y-4">
+                    {process.env.NEXT_PUBLIC_DEMO_MODE === "true" ? (
+                        <div className="mt-10 border-t border-white/5 pt-8">
+                            <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.3em] text-secondary">
+                                Investor demo access
+                            </p>
+                            <div className="grid grid-cols-3 gap-2">
+                                {[
+                                    { role: "FOUNDER" as const, label: "Founder", icon: Rocket },
+                                    { role: "INVESTOR" as const, label: "Investor", icon: Landmark },
+                                    { role: "ADMIN" as const, label: "Core", icon: Settings2 },
+                                ].map(({ role, label, icon: Icon }) => (
+                                    <button
+                                        key={role}
+                                        type="button"
+                                        onClick={() => handleDemoLogin(role)}
+                                        disabled={Boolean(demoLoading)}
+                                        className="flex min-h-20 flex-col items-center justify-center gap-2 border border-white/10 bg-white/[0.02] px-2 text-[9px] font-bold uppercase tracking-[0.16em] text-secondary transition hover:border-gold/50 hover:text-gold disabled:opacity-50"
+                                    >
+                                        <Icon size={17} />
+                                        {demoLoading === role ? "Opening" : label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    ) : null}
+
+                    <div className="mt-8 pt-6 border-t border-white/5 space-y-4">
                         <div className="h-4" />
                         <Link href="/" className="block text-[10px] text-[#C9A24D] hover:underline uppercase tracking-[0.2em]">
                             Return to Entry

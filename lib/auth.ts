@@ -2,8 +2,15 @@ import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { STATIC_DEMO_ENABLED } from "@/lib/demo-static";
 
-const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-for-dev-only";
+function getJwtSecret() {
+    const secret = process.env.JWT_SECRET;
+    if (!secret && process.env.NODE_ENV === "production") {
+        throw new Error("JWT_SECRET is required in production");
+    }
+    return secret || "fallback-secret-for-local-development-only";
+}
 
 export interface JWTPayload {
     userId: string;
@@ -13,25 +20,29 @@ export interface JWTPayload {
 }
 
 export function signToken(payload: JWTPayload): string {
-    return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
+    return jwt.sign(payload, getJwtSecret(), { expiresIn: "7d" });
 }
 
 export function verifyToken(token: string): JWTPayload | null {
     try {
-        return jwt.verify(token, JWT_SECRET) as JWTPayload;
+        return jwt.verify(token, getJwtSecret()) as JWTPayload;
     } catch {
         return null;
     }
 }
 
 export async function getSession(): Promise<JWTPayload | null> {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get("monarch_token")?.value;
 
     if (!token) return null;
 
     const payload = verifyToken(token);
     if (!payload) return null;
+
+    if (STATIC_DEMO_ENABLED && payload.userId.startsWith("demo-")) {
+        return payload;
+    }
 
     const user = await prisma.user.findUnique({
         where: { id: payload.userId },
@@ -59,7 +70,7 @@ export async function getSession(): Promise<JWTPayload | null> {
 
 export async function setSession(payload: JWTPayload) {
     const token = signToken(payload);
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
 
     cookieStore.set("monarch_token", token, {
         httpOnly: true,
@@ -85,7 +96,7 @@ export async function setSession(payload: JWTPayload) {
 }
 
 export async function clearSession() {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     cookieStore.delete("monarch_token");
     cookieStore.delete("monarch_auth");
     cookieStore.delete("monarch_role");

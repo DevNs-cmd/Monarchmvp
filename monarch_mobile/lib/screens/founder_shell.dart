@@ -349,7 +349,10 @@ class _FounderBoardroom extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () {},
+                onPressed: () => showMonarchNotice(
+                  context,
+                  'Boardroom preparation checklist opened for review.',
+                ),
                 child: const Text('Review prep checklist'),
               ),
             ],

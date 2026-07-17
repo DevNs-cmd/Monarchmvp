@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { PAGE_TITLES } from "@/lib/constants";
 import { useAuthStore } from "@/store/authStore";
@@ -8,9 +9,26 @@ import Button from "@/components/ui/Button";
 export default function Topbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, role, logout } = useAuthStore();
+  const { user, role, login, logout } = useAuthStore();
 
   const title = PAGE_TITLES[pathname] ?? "Dashboard";
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/user/me", { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => {
+        if (!active || !data?.user) return;
+        login(
+          { name: data.user.name || "Monarch Member", email: data.user.email },
+          String(data.user.role).toLowerCase() as "founder" | "investor" | "admin",
+        );
+      })
+      .catch(() => null);
+    return () => {
+      active = false;
+    };
+  }, [login]);
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);

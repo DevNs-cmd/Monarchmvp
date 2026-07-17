@@ -10,6 +10,7 @@ import {
     Lock
 } from "lucide-react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 type StartupDetail = {
@@ -21,6 +22,11 @@ type StartupDetail = {
     monarchIndex: number;
     valuation: number | null;
     deckKey?: string | null;
+    summary?: string | null;
+    metrics?: Record<string, string> | null;
+    financials?: Record<string, string> | null;
+    capTable?: Record<string, string> | null;
+    riskDisclosures?: Record<string, string> | null;
 };
 
 type InterestState = {
@@ -29,7 +35,8 @@ type InterestState = {
     status?: "PENDING" | "MUTUAL" | string;
 } | null;
 
-export default function StartupDossier({ params }: { params: { startupId: string } }) {
+export default function StartupDossier() {
+    const params = useParams<{ startupId: string }>();
     const [loading, setLoading] = useState(true);
     const [startup, setStartup] = useState<StartupDetail | null>(null);
     const [interest, setInterest] = useState<InterestState>(null);
@@ -114,7 +121,8 @@ export default function StartupDossier({ params }: { params: { startupId: string
     const capitalAsk = Number(startup?.capitalAsk ?? 0);
     const stageLabel = startup?.stage ?? "Unknown stage";
     const industryLabel = startup?.industry ?? "Unknown sector";
-    const riskNotes = [
+    const disclosedRisks = Object.entries(startup?.riskDisclosures || {}).map(([key, value]) => `${key.replace(/([A-Z])/g, " $1")}: ${value}`);
+    const riskNotes = disclosedRisks.length ? disclosedRisks : [
         `Stage exposure: ${stageLabel} liquidity assumptions remain sensitive to macro cycles.`,
         `Capital ask of $${capitalAsk.toLocaleString()} implies extended runway expectations for institutional checkpoints.`,
         `Sector concentration risk flagged for ${industryLabel}; diversification path recommended.`,
@@ -214,7 +222,7 @@ export default function StartupDossier({ params }: { params: { startupId: string
                             <div className="card-premium p-10">
                                 <h4 className="text-sm font-bold uppercase tracking-[0.3em] text-gold mb-8">Executive Summary</h4>
                                 <p className="text-secondary leading-relaxed mb-6">
-                                    {startup.name} is building mission-critical infrastructure with a focus on institutional-grade execution and capital efficiency.
+                                    {startup.summary || `${startup.name} is building mission-critical infrastructure with a focus on institutional-grade execution and capital efficiency.`}
                                 </p>
                                 <div className="grid grid-cols-2 gap-8 py-8 border-y border-white/5">
                                     <div>
@@ -253,20 +261,12 @@ export default function StartupDossier({ params }: { params: { startupId: string
                     <div className="card-premium p-10">
                         <h4 className="text-sm font-bold uppercase tracking-[0.3em] text-gold mb-8">Metrics Pulse</h4>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            <div className="text-center">
-                                <p className="text-2xl font-bold font-mono">${Number(startup.capitalAsk).toLocaleString()}</p>
-                                <p className="text-[10px] text-secondary uppercase tracking-widest mt-1">Capital Ask</p>
-                            </div>
-                            <div className="text-center md:border-x border-white/5">
-                                <p className="text-2xl font-bold font-mono">{startup.stage}</p>
-                                <p className="text-[10px] text-secondary uppercase tracking-widest mt-1">Stage</p>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-2xl font-bold font-mono">
-                                    {startup.valuation ? `$${Number(startup.valuation).toLocaleString()}` : "N/A"}
-                                </p>
-                                <p className="text-[10px] text-secondary uppercase tracking-widest mt-1">Pre-Money</p>
-                            </div>
+                            {Object.entries({ ...(startup.metrics || {}), ...(startup.financials || {}) }).map(([label, value]) => (
+                                <div key={label} className="border-b border-white/5 pb-5 text-center">
+                                    <p className="text-xl font-bold font-mono">{value}</p>
+                                    <p className="text-[10px] text-secondary uppercase tracking-widest mt-1">{label.replace(/([A-Z])/g, " $1")}</p>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 )}
@@ -277,9 +277,14 @@ export default function StartupDossier({ params }: { params: { startupId: string
                             <Lock size={16} className="text-gold" />
                             <h4 className="text-[10px] font-bold uppercase tracking-widest">Secure Data Room</h4>
                         </div>
-                        {!canAccessDeck && (
+                        {interest?.status !== "MUTUAL" && (
                             <div className="text-[10px] uppercase tracking-[0.2em] text-secondary">
                                 Pitch deck access is available after mutual interest approval.
+                            </div>
+                        )}
+                        {interest?.status === "MUTUAL" && !startup.deckKey && (
+                            <div className="text-[10px] uppercase tracking-[0.2em] text-secondary">
+                                The founder is preparing the latest verified deck for this data room.
                             </div>
                         )}
                         {canAccessDeck && (

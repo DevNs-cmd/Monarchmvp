@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logAction } from "@/lib/audit";
+import { STATIC_DEMO_ENABLED } from "@/lib/demo-static";
 
 function generateInviteCode(role: string) {
     const prefix = role === "FOUNDER" ? "MONARCH" : role === "INVESTOR" ? "INVESTOR" : "ADMIN";
@@ -22,6 +23,7 @@ export async function POST(request: Request) {
         if (!requestId) {
             return NextResponse.json({ error: "Request ID required" }, { status: 400 });
         }
+        if (STATIC_DEMO_ENABLED) return NextResponse.json({ success: true, inviteCode: "INVESTOR-DEMO26", simulated: true });
 
         const accessRequest = await prisma.accessRequest.findUnique({
             where: { id: requestId },
